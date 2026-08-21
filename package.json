@@ -20,7 +20,8 @@
     "win": {
       "target": [
         "portable"
-      ]
+      ],
+      "signAndEditExecutable": false
     },
     "portable": {
       "artifactName": "CS2-Command-Generator-${version}.exe"
