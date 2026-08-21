@@ -10,3 +10,9 @@ desktop.ini
 
 # 日志
 *.log
+
+# 打包工具与产物
+node_modules/
+dist/
+.tooling/
+build/
