@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS2 指令生成器 · 人机练习房</title>
+<style>
+:root{
+  --bg:#0b0e13;
+  --bg2:#10151d;
+  --panel:#141921;
+  --panel2:#1a212c;
+  --border:#232c3a;
+  --text:#e8e6e1;
+  --dim:#8b93a1;
+  --accent:#f2a33c;
+  --accent-dim:#a9712a;
+  --green:#7bc96f;
+  --red:#e0655a;
+  --mono:Consolas,'JetBrains Mono','Cascadia Code',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:linear-gradient(160deg,var(--bg) 0%,var(--bg2) 100%);
+  color:var(--text);
+  font-family:-apple-system,'Segoe UI','Microsoft YaHei',sans-serif;
+  min-height:100vh;
+}
+/* ===== Header ===== */
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 28px;
+  border-bottom:1px solid var(--border);
+  background:rgba(255,255,255,0.02);
+  flex-wrap:wrap;gap:12px;
+}
+.logo{display:flex;align-items:center;gap:14px;}
+.logo-badge{
+  background:linear-gradient(135deg,var(--accent),#c7781f);
+  color:#14100a;font-weight:800;font-size:20px;
+  padding:8px 12px;border-radius:10px;letter-spacing:1px;
+  box-shadow:0 2px 14px rgba(242,163,60,0.35);
+}
+.logo h1{font-size:22px;font-weight:700;letter-spacing:1px;}
+.logo p{font-size:12px;color:var(--dim);margin-top:2px;}
+.header-stats{display:flex;align-items:center;gap:14px;}
+.header-stats span{color:var(--dim);font-size:13px;}
+button{
+  cursor:pointer;font-family:inherit;
+  border:1px solid var(--border);background:var(--panel2);color:var(--text);
+  border-radius:8px;padding:8px 16px;font-size:13px;
+  transition:all .15s ease;
+}
+button:hover{border-color:var(--accent);color:var(--accent);}
+button.ghost{background:transparent;}
+/* ===== 模板条 ===== */
+.tpl-wrap{padding:22px 28px 4px;}
+.tpl-title{
+  font-size:13px;color:var(--dim);letter-spacing:2px;
+  margin-bottom:12px;display:flex;align-items:center;gap:10px;
+}
+.tpl-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.tpl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.tpl{
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  padding:16px;display:flex;gap:12px;align-items:flex-start;
+  cursor:pointer;transition:all .15s ease;position:relative;overflow:hidden;
+}
+.tpl::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--accent);opacity:0;transition:opacity .15s;
+}
+.tpl:hover{transform:translateY(-2px);border-color:var(--accent);box-shadow:0 6px 20px rgba(0,0,0,0.35);}
+.tpl:hover::before{opacity:1;}
+.tpl-icon{font-size:26px;line-height:1.2;}
+.tpl-name{font-weight:700;font-size:15px;margin-bottom:4px;}
+.tpl-desc{font-size:12px;color:var(--dim);line-height:1.5;}
+/* ===== 主布局 ===== */
+.layout{
+  display:grid;grid-template-columns:1fr 420px;gap:20px;
+  padding:22px 28px 40px;align-items:start;
+}
+/* ===== 模块列表 ===== */
+.mod-list{min-width:0;}
+.cat{
+  font-size:12px;color:var(--accent);letter-spacing:3px;
+  margin:20px 0 10px;font-weight:600;
+}
+.cat:first-child{margin-top:0;}
+.mod-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.mod{
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  cursor:pointer;transition:all .15s ease;overflow:hidden;
+}
+.mod:hover{border-color:#3a4556;}
+.mod.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 4px 16px rgba(242,163,60,0.08);}
+.mod-head{display:flex;align-items:center;gap:12px;padding:14px 16px;}
+.mod-check{
+  width:20px;height:20px;flex:none;
+  border:2px solid #3a4556;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;color:transparent;font-weight:800;
+  transition:all .15s ease;
+}
+.mod.active .mod-check{background:var(--accent);border-color:var(--accent);color:#14100a;}
+.mod-icon{font-size:20px;flex:none;}
+.mod-info{min-width:0;}
+.mod-name{font-size:14px;font-weight:600;margin-bottom:3px;}
+.mod-desc{font-size:11.5px;color:var(--dim);line-height:1.5;}
+.mod-params{
+  display:none;padding:0 16px 14px;
+  border-top:1px dashed var(--border);
+  margin:0 12px;padding:12px 0 14px;margin-top:0;
+}
+.mod.active .mod-params{display:block;animation:fadeIn .18s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+.pr{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  font-size:12.5px;color:var(--dim);margin-top:10px;
+}
+.pr:first-child{margin-top:0;}
+.pr input[type=number]{
+  width:110px;background:var(--bg2);border:1px solid var(--border);color:var(--text);
+  border-radius:7px;padding:6px 10px;font-family:var(--mono);font-size:13px;
+  text-align:right;outline:none;transition:border .15s;
+}
+.pr input[type=number]:focus{border-color:var(--accent);}
+.pr input[type=text]{
+  width:110px;background:var(--bg2);border:1px solid var(--border);color:var(--text);
+  border-radius:7px;padding:6px 10px;font-family:var(--mono);font-size:13px;
+  text-align:center;outline:none;transition:border .15s;
+}
+.pr input[type=text]:focus{border-color:var(--accent);}
+.pr em{font-style:normal;flex:1;font-size:11px;color:#5b6472;line-height:1.4;}
+.pr select{
+  width:150px;background:var(--bg2);border:1px solid var(--border);color:var(--text);
+  border-radius:7px;padding:6px 8px;font-size:13px;outline:none;cursor:pointer;
+}
+.pr select:focus{border-color:var(--accent);}
+.pr.chk{justify-content:flex-start;gap:8px;cursor:pointer;color:var(--text);}
+.pr.chk input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer;}
+/* ===== 输出面板 ===== */
+.out-panel{
+  background:var(--panel);border:1px solid var(--border);border-radius:14px;
+  padding:18px;position:sticky;top:18px;
+}
+.out-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.out-title{font-size:15px;font-weight:700;}
+.out-title span{
+  font-size:12px;color:var(--accent);background:rgba(242,163,60,0.12);
+  padding:2px 9px;border-radius:20px;margin-left:8px;font-weight:600;
+}
+#copyBtn{
+  background:linear-gradient(135deg,var(--accent),#c7781f);
+  border:none;color:#14100a;font-weight:700;padding:9px 18px;border-radius:9px;
+  box-shadow:0 2px 12px rgba(242,163,60,0.3);
+}
+#copyBtn:hover{filter:brightness(1.08);transform:translateY(-1px);}
+#copyBtn.done{background:linear-gradient(135deg,var(--green),#4f9d46);}
+.view-toggle{display:flex;gap:6px;margin-bottom:12px;}
+.view-toggle button{
+  flex:1;padding:6px 0;font-size:12px;border-radius:7px;background:transparent;color:var(--dim);
+}
+.view-toggle button.on{background:var(--panel2);color:var(--accent);border-color:var(--accent-dim);}
+#outText{
+  background:#0d1117;border:1px solid var(--border);border-radius:10px;
+  padding:14px;font-family:var(--mono);font-size:12.5px;line-height:1.7;
+  color:#a8e6a0;white-space:pre-wrap;word-break:break-all;
+  max-height:340px;overflow:auto;min-height:90px;
+}
+#outText.empty{color:var(--dim);font-family:inherit;font-size:13px;}
+.out-hint{font-size:11.5px;color:var(--dim);margin-top:10px;line-height:1.6;}
+/* ===== 速查表 ===== */
+.cheatsheet{margin-top:16px;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.cheatsheet summary{
+  padding:11px 14px;font-size:13px;cursor:pointer;color:var(--dim);
+  user-select:none;background:var(--panel2);
+}
+.cheatsheet summary:hover{color:var(--accent);}
+.cheatsheet table{width:100%;border-collapse:collapse;font-size:11.5px;}
+.cheatsheet td{padding:7px 12px;border-top:1px solid var(--border);vertical-align:top;}
+.cheatsheet td:first-child{
+  font-family:var(--mono);color:var(--accent);white-space:nowrap;
+  width:42%;
+}
+.cheatsheet td:last-child{color:var(--dim);line-height:1.5;}
+/* ===== 页脚 ===== */
+footer{
+  padding:18px 28px 30px;font-size:11.5px;color:#5b6472;
+  border-top:1px solid var(--border);line-height:1.8;
+}
+footer b{color:var(--accent);}
+/* ===== 响应式 ===== */
+@media (max-width:1080px){
+  .layout{grid-template-columns:1fr;}
+  .out-panel{position:static;}
+}
+@media (max-width:720px){
+  .tpl-grid{grid-template-columns:1fr;}
+  .mod-grid{grid-template-columns:1fr;}
+  header{padding:14px 16px;}
+  .tpl-wrap,.layout{padding-left:16px;padding-right:16px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-badge">CS2</span>
+    <div>
+      <h1>指令生成器</h1>
+      <p>自建练习房 · 人机对战 · 一键生成控制台指令</p>
+    </div>
+  </div>
+  <div class="header-stats">
+    <span id="selCount">已选 0 个模块</span>
+    <button id="clearAll" class="ghost">清空选择</button>
+  </div>
+</header>
+
+<section class="tpl-wrap">
+  <div class="tpl-title">快速模板 · 一键载入</div>
+  <div class="tpl-grid" id="tplGrid"></div>
+</section>
+
+<main class="layout">
+  <section class="mod-list" id="modList"></section>
+
+  <aside class="out-panel">
+    <div class="out-head">
+      <div class="out-title">生成指令<span id="cmdCount">0 条</span></div>
+      <button id="copyBtn">📋 复制指令</button>
+    </div>
+    <div class="view-toggle" id="viewToggle">
+      <button data-view="compact" class="on">一行紧凑</button>
+      <button data-view="lines">分行预览</button>
+    </div>
+    <pre id="outText" class="empty">在左侧勾选模块、设置参数，这里会自动生成可以整段粘贴到游戏控制台的指令。</pre>
+    <div class="out-hint" id="outHint"></div>
+
+    <details class="cheatsheet">
+      <summary>📖 指令速查表（点击展开）</summary>
+      <table>
+        <tr><td>sv_cheats 1</td><td>开启作弊模式（练习房必需，进房后第一个执行）</td></tr>
+        <tr><td>mp_limitteams 0</td><td>允许队伍人数不平衡（1v5 必需）</td></tr>
+        <tr><td>mp_autoteambalance false</td><td>关闭自动平衡队伍</td></tr>
+        <tr><td>mp_freezetime 0 / 3</td><td>冻结时间，0 秒即开局就能动</td></tr>
+        <tr><td>bot_difficulty 1~5</td><td>人机难度，5 为最难</td></tr>
+        <tr><td>bot_add_t / bot_add_ct</td><td>添加人机到 T 队 / CT 队</td></tr>
+        <tr><td>bot_kick</td><td>清除所有现有人机</td></tr>
+        <tr><td>bot_stop 1</td><td>人机站桩不动，当活靶子练枪</td></tr>
+        <tr><td>mp_restartgame 1</td><td>重启当前回合，让指令生效</td></tr>
+        <tr><td>buddha 1 / 0</td><td>开启 / 关闭锁血（血打不完）</td></tr>
+        <tr><td>buddha_reset_hp 1000</td><td>改血量核心指令：锁血状态下把血量刷到设定值</td></tr>
+        <tr><td>give weapon_xxx</td><td>直接获得指定武器（枪械/道具；CS2 的刀不能 give，需用 subclass）</td></tr>
+        <tr><td>sv_infinite_ammo 1</td><td>无限弹药；2 = 无限且无需换弹</td></tr>
+        <tr><td>weapon_recoil_scale 0</td><td>消除后坐力，弹道笔直</td></tr>
+        <tr><td>sv_showimpacts 1</td><td>显示弹着点（练预瞄定位）</td></tr>
+        <tr><td>sv_grenade_trajectory 1</td><td>显示投掷物飞行轨迹</td></tr>
+        <tr><td>host_timescale 0.2</td><td>慢动作回放；1 恢复正常速度</td></tr>
+        <tr><td>sv_gravity 0</td><td>无重力；800 为正常重力</td></tr>
+        <tr><td>sv_jump_impulse 1000</td><td>跳跃力度，默认约 301</td></tr>
+        <tr><td>mp_drop_knife_enable true</td><td>允许丢弃/展示刀（蝴蝶刀需要）</td></tr>
+        <tr><td>subclass_create 515</td><td>CS2 出刀专用：生成蝴蝶刀实体在地上（515=蝴蝶刀，507=爪子刀，508=M9，514=弯刀，525=骷髅刀），走过去拾取</td></tr>
+        <tr><td>bind p "subclass_create 515"</td><td>把出刀指令绑定到 P 键，按 P 即在脚下生成</td></tr>
+        <tr><td>unbind p</td><td>解除 P 键的绑定</td></tr>
+        <tr><td>thirdperson / firstperson</td><td>第三人称视角 / 恢复第一人称</td></tr>
+      </table>
+    </details>
+  </aside>
+</main>
+
+<footer>
+  <b>使用方法：</b>设置 → 游戏 → 启用开发者控制台（~）；在自建练习房内按 ~ 打开控制台，将生成的指令整段粘贴（Ctrl + V）回车即可。<br>
+  <b>注意：</b>sv_cheats 相关指令仅在自建服务器、单人模式或练习房生效，官方匹配与竞技模式中无效；buddha、subclass_create 等指令可能受模式限制。
+</footer>
+
+<script>
+/* ================= 模块定义 ================= */
+const MODULES = [
+  /* ---------- 人机对局 ---------- */
+  {
+    id:'bot', cat:'人机对局', icon:'🤖', name:'人机对战配置',
+    desc:'设置我方阵营、人机数量与难度（含 5v5 / 1v5 场景）',
+    params:[
+      {key:'side',    label:'我方阵营',      type:'select', def:'CT',
+       options:[{v:'CT',t:'CT 反恐精英'},{v:'T',t:'T 恐怖分子'}]},
+      {key:'enemy',   label:'敌方人机数量',  type:'number', min:0, max:10, def:5},
+      {key:'ally',    label:'队友人机数量',  type:'number', min:0, max:10, def:4},
+      {key:'diff',    label:'人机难度',      type:'select', def:5, options:[1,2,3,4,5]},
+      {key:'freeze',  label:'冻结时间（秒）', type:'number', min:0, max:60, def:3},
+    ],
+    build(p){
+      const c=[
+        'sv_cheats 1','mp_limitteams 0','mp_autoteambalance false',
+        'mp_freezetime '+p.freeze,
+        'sv_auto_adjust_bot_difficulty false',
+        'mp_coopmission_bot_difficulty_offset '+p.diff,
+        'bot_difficulty '+p.diff,
+        'custom_bot_difficulty '+p.diff,
+        'bot_kick'
+      ];
+      const enemySide = p.side==='CT' ? 't' : 'ct';
+      const allySide  = p.side==='CT' ? 'ct' : 't';
+      for(let i=0;i<p.enemy;i++) c.push('bot_add_'+enemySide);
+      for(let i=0;i<p.ally; i++) c.push('bot_add_'+allySide);
+      c.push('mp_restartgame 1');
+      return c;
+    }
+  },
+  {
+    id:'botbehave', cat:'人机对局', icon:'🎯', name:'人机行为设置',
+    desc:'人机站桩当靶子，或限制人机只用刀 / 手枪',
+    params:[
+      {key:'stop', label:'人机站桩', type:'select', def:1, options:[{v:1,t:'站桩不动'},{v:0,t:'正常移动'}]},
+      {key:'weapon', label:'人机武器', type:'select', def:'none',
+       options:[{v:'none',t:'不限'},{v:'knife',t:'只用刀'},{v:'pistol',t:'只用手枪'}]},
+    ],
+    build(p){
+      const c=['sv_cheats 1','bot_stop '+p.stop];
+      if(p.weapon==='knife')  c.push('bot_knives_only 1');
+      if(p.weapon==='pistol') c.push('bot_pistols_only 1');
+      return c;
+    }
+  },
+  {
+    id:'kick', cat:'人机对局', icon:'🧹', name:'清除人机',
+    desc:'踢出场上所有人机，重新开始',
+    build(){ return ['sv_cheats 1','bot_kick','mp_restartgame 1']; }
+  },
+
+  /* ---------- 对局规则 ---------- */
+  {
+    id:'round', cat:'对局规则', icon:'⏱️', name:'回合与时间配置',
+    desc:'冻结时间、回合时长、最大回合数、无限时',
+    params:[
+      {key:'freeze',   label:'冻结时间（秒）', type:'number', min:0, max:60, def:0},
+      {key:'time',     label:'回合时长（分钟）', type:'number', min:1, max:999, def:60},
+      {key:'maxrounds',label:'最大回合数',     type:'number', min:1, max:999, def:30},
+      {key:'restart',  label:'立即重启回合',    type:'checkbox', def:true},
+    ],
+    build(p){
+      const c=['sv_cheats 1',
+        'mp_freezetime '+p.freeze,
+        'mp_roundtime '+p.time,
+        'mp_roundtime_defuse '+p.time,
+        'mp_roundtime_hostage '+p.time,
+        'mp_maxrounds '+p.maxrounds,
+        'mp_timelimit 0'];
+      if(p.restart) c.push('mp_restartgame 1');
+      return c;
+    }
+  },
+  {
+    id:'buy', cat:'对局规则', icon:'💰', name:'购买配置',
+    desc:'任意地点购买 + 超长购买时间 + 满钱',
+    params:[
+      {key:'anywhere',label:'任意地点购买',   type:'checkbox', def:true},
+      {key:'buytime', label:'购买时间（秒）', type:'number', min:1, max:99999, def:9999},
+      {key:'money',   label:'初始/最高金钱',  type:'number', min:0, max:16000, def:16000},
+    ],
+    build(p){
+      const c=['sv_cheats 1','mp_maxmoney '+p.money,'mp_startmoney '+p.money];
+      if(p.anywhere) c.push('mp_buy_anywhere 1');
+      c.push('mp_buytime '+p.buytime);
+      return c;
+    }
+  },
+
+  /* ---------- 玩家增强 ---------- */
+  {
+    id:'hp', cat:'玩家增强', icon:'❤️', name:'设置血量',
+    desc:'buddha 锁血方案设置血量（buddha_reset_hp 为改血量核心指令）',
+    params:[
+      {key:'hp',   label:'目标血量',    type:'number', min:1, max:99999, def:1000},
+    ],
+    build(p){
+      return ['sv_cheats 1','buddha 1','buddha_reset_hp '+p.hp,'buddha 0'];
+    }
+  },
+  {
+    id:'ammo', cat:'玩家增强', icon:'🔁', name:'无限弹药',
+    desc:'子弹打不完',
+    params:[
+      {key:'mode', label:'模式', type:'select', def:1,
+       options:[{v:1,t:'无限弹药'},{v:2,t:'无限且免换弹'}]},
+    ],
+    build(p){ return ['sv_cheats 1','sv_infinite_ammo '+p.mode]; }
+  },
+  {
+    id:'recoil', cat:'玩家增强', icon:'🎯', name:'无后坐力',
+    desc:'weapon_recoil_scale 0，压枪变直线',
+    build(){ return ['sv_cheats 1','weapon_recoil_scale 0']; }
+  },
+  {
+    id:'jump', cat:'玩家增强', icon:'🦘', name:'跳跃高度',
+    desc:'加大跳跃力度（默认约 301）',
+    params:[
+      {key:'v', label:'跳跃力度', type:'number', min:0, max:9999, def:1000},
+    ],
+    build(p){ return ['sv_cheats 1','sv_jump_impulse '+p.v]; }
+  },
+  {
+    id:'gravity', cat:'玩家增强', icon:'🌌', name:'重力',
+    desc:'0 = 无重力漂浮，800 = 正常',
+    params:[
+      {key:'v', label:'重力值', type:'number', min:0, max:8000, def:0},
+    ],
+    build(p){ return ['sv_cheats 1','sv_gravity '+p.v]; }
+  },
+  {
+    id:'slowmo', cat:'玩家增强', icon:'🐢', name:'慢动作',
+    desc:'时间流速 0.2 = 慢动作回放，1 = 正常',
+    params:[
+      {key:'v', label:'时间流速', type:'number', min:0.1, max:1, step:0.1, def:0.2},
+    ],
+    build(p){ return ['sv_cheats 1','host_timescale '+p.v]; }
+  },
+  {
+    id:'third', cat:'玩家增强', icon:'🎥', name:'视角切换',
+    desc:'第三人称观感 / 恢复第一人称',
+    params:[
+      {key:'mode', label:'视角', type:'select', def:'thirdperson',
+       options:[{v:'thirdperson',t:'第三人称'},{v:'firstperson',t:'第一人称'}]},
+    ],
+    build(p){ return ['sv_cheats 1',p.mode]; }
+  },
+
+  /* ---------- 武器 ---------- */
+  {
+    id:'weapon', cat:'武器', icon:'🔫', name:'给自己武器',
+    desc:'give 直接获得武器；CS2 刀改用 subclass 生成（已自动处理）',
+    params:[
+      {key:'w', label:'武器', type:'select', def:'knife:515',
+       options:[
+         {v:'knife:515',t:'蝴蝶刀（生成地上，拾取）'},
+         {v:'knife:507',t:'爪子刀 Karambit'},
+         {v:'knife:508',t:'M9 刺刀'},
+         {v:'knife:514',t:'Bowie 弯刀'},
+         {v:'knife:525',t:'骷髅刀 Skeleton'},
+         {v:'knife:524',t:'默认小刀'},
+         {v:'weapon_awp',            t:'AWP 大狙'},
+         {v:'weapon_ssg08',          t:'SSG 08 鸟狙'},
+         {v:'weapon_ak47',           t:'AK-47'},
+         {v:'weapon_m4a1_silencer',  t:'M4A1-S'},
+         {v:'weapon_m4a1',           t:'M4A4'},
+         {v:'weapon_deagle',         t:'沙漠之鹰'},
+         {v:'weapon_usp_silencer',   t:'USP-S'},
+         {v:'weapon_glock',          t:'Glock-18'},
+         {v:'weapon_mp9',            t:'MP9'},
+         {v:'weapon_hegrenade',      t:'高爆手雷'},
+         {v:'weapon_flashbang',      t:'闪光弹'},
+         {v:'weapon_smokegrenade',   t:'烟雾弹'},
+       ]},
+    ],
+    build(p){
+      if(p.w.indexOf('knife:')===0){
+        return ['sv_cheats 1','mp_drop_knife_enable true','subclass_create '+p.w.split(':')[1]];
+      }
+      return ['sv_cheats 1','give '+p.w];
+    }
+  },
+  {
+    id:'knifeshow', cat:'武器', icon:'🔪', name:'蝴蝶刀展示（示例）',
+    desc:'示例特效：允许丢刀 + 生成蝴蝶刀实体，走过去拾取（正常视角）',
+    build(){ return ['sv_cheats 1','mp_drop_knife_enable true','subclass_create 515']; }
+  },
+  {
+    id:'dropknife', cat:'武器', icon:'🪂', name:'允许丢弃刀/枪',
+    desc:'mp_drop_knife_enable true，可以丢出刀',
+    build(){ return ['sv_cheats 1','mp_drop_knife_enable true']; }
+  },
+  {
+    id:'bindknife', cat:'武器', icon:'⌨️', name:'按键绑定 · 一键出刀',
+    desc:'按 P 等按键即可生成刀。网上用不了是因为 give 刀在 CS2 已失效，刀必须走 subclass',
+    params:[
+      {key:'key', label:'按键', type:'text', def:'p', hint:'字母直接写，如 p；功能键如 F1、F2；鼠标 MOUSE4 / MOUSE5'},
+      {key:'knife', label:'刀型', type:'select', def:515,
+       options:[
+         {v:515,t:'蝴蝶刀 Butterfly'},
+         {v:507,t:'爪子刀 Karambit'},
+         {v:508,t:'M9 刺刀'},
+         {v:514,t:'Bowie 弯刀'},
+         {v:525,t:'骷髅刀 Skeleton'},
+         {v:524,t:'默认小刀'},
+       ]},
+    ],
+    build(p){
+      return ['sv_cheats 1','mp_drop_knife_enable true','bind '+p.key+' "subclass_create '+p.knife+'"'];
+    }
+  },
+  {
+    id:'unbindkey', cat:'武器', icon:'🗝️', name:'解除按键绑定',
+    desc:'取消指定按键的绑定（比如之前绑的一键出刀）',
+    params:[
+      {key:'key', label:'按键', type:'text', def:'p'},
+    ],
+    build(p){ return ['unbind '+p.key]; }
+  },
+
+  /* ---------- 训练辅助 ---------- */
+  {
+    id:'train', cat:'训练辅助', icon:'📡', name:'弹道与投掷物轨迹',
+    desc:'显示弹着点 + 手雷飞行轨迹',
+    params:[
+      {key:'impact',     label:'显示弹着点',      type:'checkbox', def:true},
+      {key:'impact_time',label:'弹着点持续（秒）', type:'number', min:1, max:60, def:10},
+      {key:'grenade',    label:'显示手雷轨迹',    type:'checkbox', def:true},
+      {key:'grenade_time',label:'轨迹持续（秒）', type:'number', min:1, max:60, def:10},
+    ],
+    build(p){
+      const c=['sv_cheats 1'];
+      if(p.impact){ c.push('sv_showimpacts 1','sv_showimpacts_time '+p.impact_time); }
+      if(p.grenade){ c.push('sv_grenade_trajectory 1','sv_grenade_trajectory_time '+p.grenade_time); }
+      return c;
+    }
+  },
+  {
+    id:'nades', cat:'训练辅助', icon:'💣', name:'无限手雷',
+    desc:'扩充投掷物携带上限（默认 1 颗）',
+    params:[
+      {key:'n', label:'携带上限', type:'number', min:0, max:10, def:5},
+    ],
+    build(p){ return ['sv_cheats 1','ammo_grenade_limit_total '+p.n]; }
+  },
+];
+
+/* ================= 模板 ================= */
+const TEMPLATES = [
+  {
+    name:'CT 5v5 · 高难度人机', icon:'🛡️',
+    desc:'我方 CT 满编 5 人，敌方 T 5 人，难度 5，冻结 3 秒',
+    set(){
+      setModule('bot',{side:'CT',enemy:5,ally:4,diff:5,freeze:3});
+    }
+  },
+  {
+    name:'血量 1000 + 蝴蝶刀', icon:'❤️',
+    desc:'buddha 锁血方案设血量 1000，并生成蝴蝶刀展示',
+    set(){
+      setModule('hp',{hp:1000});
+      setModule('knifeshow',{});
+    }
+  },
+  {
+    name:'1v5 人机训练', icon:'🎯',
+    desc:'我方 CT 一人，敌方 T 5 人，高难度，练残局',
+    set(){
+      setModule('bot',{side:'CT',enemy:5,ally:0,diff:5,freeze:3});
+    }
+  },
+];
+
+/* ================= 渲染 ================= */
+function modParamsHtml(m){
+  if(!m.params) return '';
+  let p = '<div class="mod-params">';
+  for(const pr of m.params){
+    const id = 'p_'+m.id+'_'+pr.key;
+    if(pr.type==='select'){
+      const opts = pr.options.map(o=>{
+        const v = (typeof o==='object') ? o.v : o;
+        const t = (typeof o==='object') ? o.t : o;
+        return '<option value="'+v+'"'+(String(v)===String(pr.def)?' selected':'')+'>'+t+'</option>';
+      }).join('');
+      p += '<label class="pr">'+pr.label+'<select id="'+id+'" data-key="'+pr.key+'">'+opts+'</select></label>';
+    }else if(pr.type==='checkbox'){
+      p += '<label class="pr chk"><input type="checkbox" id="'+id+'" data-key="'+pr.key+'"'+(pr.def?' checked':'')+'><span>'+pr.label+'</span></label>';
+    }else if(pr.type==='text'){
+      p += '<label class="pr">'+pr.label+(pr.hint?'<em>'+pr.hint+'</em>':'')+'<input type="text" id="'+id+'" data-key="'+pr.key+'" value="'+pr.def+'"></label>';
+    }else{
+      const step = pr.step!==undefined ? ' step="'+pr.step+'"' : ' step="1"';
+      p += '<label class="pr">'+pr.label+'<input type="number" id="'+id+'" data-key="'+pr.key+'" min="'+(pr.min??0)+'" max="'+(pr.max??99999)+'"'+step+' value="'+pr.def+'"></label>';
+    }
+  }
+  p += '</div>';
+  return p;
+}
+
+function renderModules(){
+  const list = document.getElementById('modList');
+  const cats = [];
+  for(const m of MODULES) if(!cats.includes(m.cat)) cats.push(m.cat);
+  let html = '';
+  for(const cat of cats){
+    html += '<div class="cat">'+cat+'</div><div class="mod-grid">';
+    for(const m of MODULES.filter(x=>x.cat===cat)){
+      html += '<div class="mod" data-id="'+m.id+'">'+
+        '<div class="mod-head">'+
+          '<span class="mod-check">✓</span>'+
+          '<span class="mod-icon">'+m.icon+'</span>'+
+          '<div class="mod-info">'+
+            '<div class="mod-name">'+m.name+'</div>'+
+            (m.desc?'<div class="mod-desc">'+m.desc+'</div>':'')+
+          '</div>'+
+        '</div>'+
+        modParamsHtml(m)+
+      '</div>';
+    }
+    html += '</div>';
+  }
+  list.innerHTML = html;
+}
+
+function renderTemplates(){
+  const grid = document.getElementById('tplGrid');
+  grid.innerHTML = TEMPLATES.map((t,i)=>
+    '<div class="tpl" data-tpl="'+i+'">'+
+      '<span class="tpl-icon">'+t.icon+'</span>'+
+      '<div><div class="tpl-name">'+t.name+'</div><div class="tpl-desc">'+t.desc+'</div></div>'+
+    '</div>'
+  ).join('');
+}
+
+/* ================= 参数读取 ================= */
+function getParams(m){
+  const p = {};
+  for(const pr of (m.params||[])){
+    const el = document.getElementById('p_'+m.id+'_'+pr.key);
+    if(!el){ p[pr.key]=pr.def; continue; }
+    if(pr.type==='checkbox')      p[pr.key]=el.checked;
+    else if(pr.type==='number')   p[pr.key]=parseFloat(el.value)||0;
+    else                          p[pr.key]=el.value;
+  }
+  return p;
+}
+
+function selectedModules(){
+  return MODULES.filter(m=>document.querySelector('.mod[data-id="'+m.id+'"].active'));
+}
+
+function buildAll(){
+  const cmds=[];
+  for(const m of selectedModules()) cmds.push(...m.build(getParams(m)));
+  return cmds;
+}
+
+/* ================= 生成 ================= */
+let currentView = 'compact';
+
+function generate(){
+  const cmds = buildAll();
+  const full = cmds.join(';');
+  const out = document.getElementById('outText');
+  if(!full){
+    out.textContent = '还没有生成指令，先在左侧勾选模块吧。';
+    out.classList.add('empty');
+  }else{
+    out.classList.remove('empty');
+    out.textContent = currentView==='lines' ? cmds.join(';\n') : full;
+  }
+  document.getElementById('cmdCount').textContent = ' '+cmds.length+' 条';
+  document.getElementById('selCount').textContent = '已选 '+selectedModules().length+' 个模块';
+  document.getElementById('outHint').textContent = cmds.length
+    ? cmds.length+' 条指令 · '+full.length+' 字符 · 分号分隔，可直接整段粘贴进游戏控制台'
+    : '';
+}
+
+/* ================= 事件 ================= */
+document.getElementById('modList').addEventListener('click', e=>{
+  const head = e.target.closest('.mod-head');
+  if(head){
+    head.closest('.mod').classList.toggle('active');
+    generate();
+  }
+});
+document.getElementById('modList').addEventListener('input', generate);
+document.getElementById('modList').addEventListener('change', generate);
+
+document.getElementById('clearAll').addEventListener('click', ()=>{
+  document.querySelectorAll('.mod').forEach(m=>m.classList.remove('active'));
+  generate();
+});
+
+document.getElementById('tplGrid').addEventListener('click', e=>{
+  const tpl = e.target.closest('.tpl');
+  if(!tpl) return;
+  document.querySelectorAll('.mod').forEach(m=>m.classList.remove('active'));
+  TEMPLATES[+tpl.dataset.tpl].set();
+  generate();
+});
+
+document.getElementById('viewToggle').addEventListener('click', e=>{
+  const b = e.target.closest('button');
+  if(!b) return;
+  currentView = b.dataset.view;
+  document.querySelectorAll('#viewToggle button').forEach(x=>x.classList.toggle('on', x===b));
+  generate();
+});
+
+function setModule(id, params){
+  const el = document.querySelector('.mod[data-id="'+id+'"]');
+  if(!el) return;
+  el.classList.add('active');
+  const mod = MODULES.find(m=>m.id===id);
+  for(const k in params){
+    if(!mod.params) continue;
+    const pr = mod.params.find(x=>x.key===k);
+    if(!pr) continue;
+    const input = document.getElementById('p_'+id+'_'+k);
+    if(!input) continue;
+    if(pr.type==='checkbox') input.checked = !!params[k];
+    else input.value = params[k];
+  }
+}
+
+const copyBtn = document.getElementById('copyBtn');
+copyBtn.addEventListener('click', async ()=>{
+  const full = buildAll().join(';');
+  if(!full) return;
+  try{
+    await navigator.clipboard.writeText(full);
+  }catch(err){
+    const ta = document.createElement('textarea');
+    ta.value = full; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    ta.remove();
+  }
+  copyBtn.textContent = '✓ 已复制';
+  copyBtn.classList.add('done');
+  setTimeout(()=>{ copyBtn.textContent='📋 复制指令'; copyBtn.classList.remove('done'); },1600);
+});
+
+/* ================= 启动 ================= */
+renderModules();
+renderTemplates();
+generate();
+</script>
+</body>
+</html>
