@@ -3,8 +3,9 @@
 > 自建练习房（人机房）专用控制台指令生成器。勾选模块、调整参数，一键生成可粘贴到游戏控制台的复合指令。
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-1.1.0-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
+![Languages](https://img.shields.io/badge/languages-中文%20%2F%20English-orange)
 
 ---
 
@@ -41,6 +42,7 @@
 
 | 特性 | 说明 |
 | --- | --- |
+| 中英双语界面 | 一键切换 中文 / English，语言偏好自动记忆 |
 | 模块化生成 | 17 个指令模块，按「人机对局 / 对局规则 / 玩家增强 / 武器 / 训练辅助」五大类组织 |
 | 一键模板 | 内置 3 个高频场景模板：CT 5v5 高难度人机、血量 1000 + 蝴蝶刀、1v5 人机训练 |
 | 按键绑定 | 支持将「一键出刀」绑定到任意按键（如 `bind p "subclass_create 515"`），按下即生成蝴蝶刀 |
@@ -54,7 +56,7 @@
 
 **方式一：直接打开（推荐）**
 
-1. 下载 `index.html`，使用任意现代浏览器打开
+1. 下载 `index.html`，使用任意现代浏览器打开（右上角「EN / 中文」按钮可随时切换界面语言）
 2. 左侧勾选模块、调整参数；或点击顶部模板卡片一键载入
 3. 右侧自动生成指令，点击「复制指令」
 4. 游戏内按 `~` 打开控制台，`Ctrl + V` 粘贴并回车
@@ -72,6 +74,10 @@
 ```
 选择模板 / 勾选模块 → 设置参数 → 复制生成的指令 → 游戏控制台粘贴执行
 ```
+
+### 语言切换
+
+点击右上角「EN / 中文」按钮，界面在中英文之间即时切换；已勾选的模块与参数设置原样保留，语言偏好自动记忆，下次打开保持上次的选择。
 
 ### 模板速览
 

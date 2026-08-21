@@ -53,6 +53,7 @@ button{
 }
 button:hover{border-color:var(--accent);color:var(--accent);}
 button.ghost{background:transparent;}
+#langBtn{min-width:52px;font-weight:700;letter-spacing:1px;color:var(--accent);border-color:var(--accent-dim);}
 /* ===== 模板条 ===== */
 .tpl-wrap{padding:22px 28px 4px;}
 .tpl-title{
@@ -209,18 +210,19 @@ footer b{color:var(--accent);}
   <div class="logo">
     <span class="logo-badge">CS2</span>
     <div>
-      <h1>指令生成器</h1>
-      <p>自建练习房 · 人机对战 · 一键生成控制台指令</p>
+      <h1 data-i18n="h1">指令生成器</h1>
+      <p data-i18n="subtitle">自建练习房 · 人机对战 · 一键生成控制台指令</p>
     </div>
   </div>
   <div class="header-stats">
+    <button id="langBtn" title="Switch language / 切换语言">EN</button>
     <span id="selCount">已选 0 个模块</span>
-    <button id="clearAll" class="ghost">清空选择</button>
+    <button id="clearAll" class="ghost" data-i18n="clearAll">清空选择</button>
   </div>
 </header>
 
 <section class="tpl-wrap">
-  <div class="tpl-title">快速模板 · 一键载入</div>
+  <div class="tpl-title" data-i18n="tplTitle">快速模板 · 一键载入</div>
   <div class="tpl-grid" id="tplGrid"></div>
 </section>
 
@@ -229,67 +231,124 @@ footer b{color:var(--accent);}
 
   <aside class="out-panel">
     <div class="out-head">
-      <div class="out-title">生成指令<span id="cmdCount">0 条</span></div>
-      <button id="copyBtn">📋 复制指令</button>
+      <div class="out-title"><span data-i18n="outTitle">生成指令</span><span id="cmdCount"> 0 条</span></div>
+      <button id="copyBtn" data-i18n="copyBtn">📋 复制指令</button>
     </div>
     <div class="view-toggle" id="viewToggle">
-      <button data-view="compact" class="on">一行紧凑</button>
-      <button data-view="lines">分行预览</button>
+      <button data-view="compact" class="on" data-i18n="viewCompact">一行紧凑</button>
+      <button data-view="lines" data-i18n="viewLines">分行预览</button>
     </div>
-    <pre id="outText" class="empty">在左侧勾选模块、设置参数，这里会自动生成可以整段粘贴到游戏控制台的指令。</pre>
+    <pre id="outText" class="empty" data-i18n="outEmpty">在左侧勾选模块、设置参数，这里会自动生成可以整段粘贴到游戏控制台的指令。</pre>
     <div class="out-hint" id="outHint"></div>
 
     <details class="cheatsheet">
-      <summary>📖 指令速查表（点击展开）</summary>
+      <summary data-i18n="refTitle">📖 指令速查表（点击展开）</summary>
       <table>
-        <tr><td>sv_cheats 1</td><td>开启作弊模式（练习房必需，进房后第一个执行）</td></tr>
-        <tr><td>mp_limitteams 0</td><td>允许队伍人数不平衡（1v5 必需）</td></tr>
-        <tr><td>mp_autoteambalance false</td><td>关闭自动平衡队伍</td></tr>
-        <tr><td>mp_freezetime 0 / 3</td><td>冻结时间，0 秒即开局就能动</td></tr>
-        <tr><td>bot_difficulty 1~5</td><td>人机难度，5 为最难</td></tr>
-        <tr><td>bot_add_t / bot_add_ct</td><td>添加人机到 T 队 / CT 队</td></tr>
-        <tr><td>bot_kick</td><td>清除所有现有人机</td></tr>
-        <tr><td>bot_stop 1</td><td>人机站桩不动，当活靶子练枪</td></tr>
-        <tr><td>mp_restartgame 1</td><td>重启当前回合，让指令生效</td></tr>
-        <tr><td>buddha 1 / 0</td><td>开启 / 关闭锁血（血打不完）</td></tr>
-        <tr><td>buddha_reset_hp 1000</td><td>改血量核心指令：锁血状态下把血量刷到设定值</td></tr>
-        <tr><td>give weapon_xxx</td><td>直接获得指定武器（枪械/道具；CS2 的刀不能 give，需用 subclass）</td></tr>
-        <tr><td>sv_infinite_ammo 1</td><td>无限弹药；2 = 无限且无需换弹</td></tr>
-        <tr><td>weapon_recoil_scale 0</td><td>消除后坐力，弹道笔直</td></tr>
-        <tr><td>sv_showimpacts 1</td><td>显示弹着点（练预瞄定位）</td></tr>
-        <tr><td>sv_grenade_trajectory 1</td><td>显示投掷物飞行轨迹</td></tr>
-        <tr><td>host_timescale 0.2</td><td>慢动作回放；1 恢复正常速度</td></tr>
-        <tr><td>sv_gravity 0</td><td>无重力；800 为正常重力</td></tr>
-        <tr><td>sv_jump_impulse 1000</td><td>跳跃力度，默认约 301</td></tr>
-        <tr><td>mp_drop_knife_enable true</td><td>允许丢弃/展示刀（蝴蝶刀需要）</td></tr>
-        <tr><td>subclass_create 515</td><td>CS2 出刀专用：生成蝴蝶刀实体在地上（515=蝴蝶刀，507=爪子刀，508=M9，514=弯刀，525=骷髅刀），走过去拾取</td></tr>
-        <tr><td>bind p "subclass_create 515"</td><td>把出刀指令绑定到 P 键，按 P 即在脚下生成</td></tr>
-        <tr><td>unbind p</td><td>解除 P 键的绑定</td></tr>
-        <tr><td>thirdperson / firstperson</td><td>第三人称视角 / 恢复第一人称</td></tr>
+        <tr><td>sv_cheats 1</td><td data-i18n="ref1">开启作弊模式（练习房必需，进房后第一个执行）</td></tr>
+        <tr><td>mp_limitteams 0</td><td data-i18n="ref2">允许队伍人数不平衡（1v5 必需）</td></tr>
+        <tr><td>mp_autoteambalance false</td><td data-i18n="ref3">关闭自动平衡队伍</td></tr>
+        <tr><td>mp_freezetime 0 / 3</td><td data-i18n="ref4">冻结时间，0 秒即开局就能动</td></tr>
+        <tr><td>bot_difficulty 1~5</td><td data-i18n="ref5">人机难度，5 为最难</td></tr>
+        <tr><td>bot_add_t / bot_add_ct</td><td data-i18n="ref6">添加人机到 T 队 / CT 队</td></tr>
+        <tr><td>bot_kick</td><td data-i18n="ref7">清除所有现有人机</td></tr>
+        <tr><td>bot_stop 1</td><td data-i18n="ref8">人机站桩不动，当活靶子练枪</td></tr>
+        <tr><td>mp_restartgame 1</td><td data-i18n="ref9">重启当前回合，让指令生效</td></tr>
+        <tr><td>buddha 1 / 0</td><td data-i18n="ref10">开启 / 关闭锁血（血打不完）</td></tr>
+        <tr><td>buddha_reset_hp 1000</td><td data-i18n="ref11">改血量核心指令：锁血状态下把血量刷到设定值</td></tr>
+        <tr><td>give weapon_xxx</td><td data-i18n="ref12">直接获得指定武器（枪械/道具；CS2 的刀不能 give，需用 subclass）</td></tr>
+        <tr><td>sv_infinite_ammo 1</td><td data-i18n="ref13">无限弹药；2 = 无限且无需换弹</td></tr>
+        <tr><td>weapon_recoil_scale 0</td><td data-i18n="ref14">消除后坐力，弹道笔直</td></tr>
+        <tr><td>sv_showimpacts 1</td><td data-i18n="ref15">显示弹着点（练预瞄定位）</td></tr>
+        <tr><td>sv_grenade_trajectory 1</td><td data-i18n="ref16">显示投掷物飞行轨迹</td></tr>
+        <tr><td>host_timescale 0.2</td><td data-i18n="ref17">慢动作回放；1 恢复正常速度</td></tr>
+        <tr><td>sv_gravity 0</td><td data-i18n="ref18">无重力；800 为正常重力</td></tr>
+        <tr><td>sv_jump_impulse 1000</td><td data-i18n="ref19">跳跃力度，默认约 301</td></tr>
+        <tr><td>mp_drop_knife_enable true</td><td data-i18n="ref20">允许丢弃/展示刀（蝴蝶刀需要）</td></tr>
+        <tr><td>subclass_create 515</td><td data-i18n="ref21">CS2 出刀专用：生成蝴蝶刀实体在地上（515=蝴蝶刀，507=爪子刀，508=M9，514=弯刀，525=骷髅刀），走过去拾取</td></tr>
+        <tr><td>bind p "subclass_create 515"</td><td data-i18n="ref22">把出刀指令绑定到 P 键，按 P 即在脚下生成</td></tr>
+        <tr><td>unbind p</td><td data-i18n="ref23">解除 P 键的绑定</td></tr>
+        <tr><td>thirdperson / firstperson</td><td data-i18n="ref24">第三人称视角 / 恢复第一人称</td></tr>
       </table>
     </details>
   </aside>
 </main>
 
 <footer>
-  <b>使用方法：</b>设置 → 游戏 → 启用开发者控制台（~）；在自建练习房内按 ~ 打开控制台，将生成的指令整段粘贴（Ctrl + V）回车即可。<br>
-  <b>注意：</b>sv_cheats 相关指令仅在自建服务器、单人模式或练习房生效，官方匹配与竞技模式中无效；buddha、subclass_create 等指令可能受模式限制。
+  <p data-i18n="footer1" data-i18n-html><b>使用方法：</b>设置 → 游戏 → 启用开发者控制台（~）；在自建练习房内按 ~ 打开控制台，将生成的指令整段粘贴（Ctrl + V）回车即可。</p>
+  <p data-i18n="footer2" data-i18n-html><b>注意：</b>sv_cheats 相关指令仅在自建服务器、单人模式或练习房生效，官方匹配与竞技模式中无效；buddha、subclass_create 等指令可能受模式限制。</p>
 </footer>
 
 <script>
+/* ================= 语言 ================= */
+let lang = 'zh';
+try{ lang = localStorage.getItem('cs2gen_lang') || 'zh'; }catch(e){}
+
+function t(key){ const e = I18N[key]; return e ? (e[lang] || e.zh) : key; }
+function tf(key, args){
+  let s = t(key);
+  for(const k in args) s = s.split('{'+k+'}').join(args[k]);
+  return s;
+}
+const T = (zh, en) => lang==='en' ? en : zh;
+
+const I18N = {
+  h1:          {zh:'指令生成器', en:'Command Generator'},
+  subtitle:    {zh:'自建练习房 · 人机对战 · 一键生成控制台指令', en:'Practice lobbies · Bot matches · One-click console commands'},
+  clearAll:    {zh:'清空选择', en:'Clear All'},
+  tplTitle:    {zh:'快速模板 · 一键载入', en:'Quick Templates · One-click Load'},
+  outTitle:    {zh:'生成指令', en:'Commands'},
+  copyBtn:     {zh:'📋 复制指令', en:'📋 Copy'},
+  copied:      {zh:'✓ 已复制', en:'✓ Copied'},
+  viewCompact: {zh:'一行紧凑', en:'One-line'},
+  viewLines:   {zh:'分行预览', en:'Multi-line'},
+  outEmpty:    {zh:'在左侧勾选模块、设置参数，这里会自动生成可以整段粘贴到游戏控制台的指令。', en:'Check modules and set parameters on the left. Generated commands appear here, ready to paste into the game console.'},
+  outEmpty2:   {zh:'还没有生成指令，先在左侧勾选模块吧。', en:'No commands yet. Select some modules on the left.'},
+  selCount:    {zh:'已选 {n} 个模块', en:'{n} modules selected'},
+  cmdCount:    {zh:' {n} 条', en:' {n} cmds'},
+  outHint:     {zh:'{n} 条指令 · {c} 字符 · 分号分隔，可直接整段粘贴进游戏控制台', en:'{n} commands · {c} chars · semicolon-separated, paste into game console'},
+  refTitle:    {zh:'📖 指令速查表（点击展开）', en:'📖 Command Reference (click to expand)'},
+  footer1:     {zh:'<b>使用方法：</b>设置 → 游戏 → 启用开发者控制台（~）；在自建练习房内按 ~ 打开控制台，将生成的指令整段粘贴（Ctrl + V）回车即可。', en:'<b>Usage:</b> Settings → Game → Enable Developer Console (~); open the console in a custom lobby and paste the commands (Ctrl + V).'},
+  footer2:     {zh:'<b>注意：</b>sv_cheats 相关指令仅在自建服务器、单人模式或练习房生效，官方匹配与竞技模式中无效；buddha、subclass_create 等指令可能受模式限制。', en:'<b>Note:</b> sv_cheats commands only work on custom servers, offline or practice lobbies — never in official matchmaking. Some commands (buddha, subclass_create) may be limited by the game mode.'},
+  ref1:  {zh:'开启作弊模式（练习房必需，进房后第一个执行）', en:'Enable cheat mode (required in practice rooms, run first)'},
+  ref2:  {zh:'允许队伍人数不平衡（1v5 必需）', en:'Allow unbalanced teams (needed for 1v5)'},
+  ref3:  {zh:'关闭自动平衡队伍', en:'Disable auto team balance'},
+  ref4:  {zh:'冻结时间，0 秒即开局就能动', en:'Freeze time in seconds; 0 = move instantly at round start'},
+  ref5:  {zh:'人机难度，5 为最难', en:'Bot difficulty, 5 = hardest'},
+  ref6:  {zh:'添加人机到 T 队 / CT 队', en:'Add a bot to T / CT team'},
+  ref7:  {zh:'清除所有现有人机', en:'Kick all existing bots'},
+  ref8:  {zh:'人机站桩不动，当活靶子练枪', en:'Bots stand still — target practice'},
+  ref9:  {zh:'重启当前回合，让指令生效', en:'Restart the round to apply changes'},
+  ref10: {zh:'开启 / 关闭锁血（血打不完）', en:'Enable / disable HP lock (cannot die)'},
+  ref11: {zh:'改血量核心指令：锁血状态下把血量刷到设定值', en:'Core HP command: refresh HP to the value while locked'},
+  ref12: {zh:'直接获得指定武器（枪械/道具；CS2 的刀不能 give，需用 subclass）', en:'Give any weapon (guns & items; knives need subclass in CS2)'},
+  ref13: {zh:'无限弹药；2 = 无限且无需换弹', en:'Infinite ammo; 2 = infinite without reloading'},
+  ref14: {zh:'消除后坐力，弹道笔直', en:'Zero recoil, straight bullets'},
+  ref15: {zh:'显示弹着点（练预瞄定位）', en:'Show bullet impacts (aim practice)'},
+  ref16: {zh:'显示投掷物飞行轨迹', en:'Show grenade flight trajectories'},
+  ref17: {zh:'慢动作回放；1 恢复正常速度', en:'Slow motion replay; 1 = normal speed'},
+  ref18: {zh:'无重力；800 为正常重力', en:'Zero gravity; 800 = normal'},
+  ref19: {zh:'跳跃力度，默认约 301', en:'Jump impulse, default ~301'},
+  ref20: {zh:'允许丢弃/展示刀（蝴蝶刀需要）', en:'Allow dropping / showing knives (butterfly needs it)'},
+  ref21: {zh:'CS2 出刀专用：生成蝴蝶刀实体在地上（515=蝴蝶刀，507=爪子刀，508=M9，514=弯刀，525=骷髅刀），走过去拾取', en:'CS2 knife command: spawn butterfly on the ground (515=butterfly, 507=karambit, 508=M9, 514=bowie, 525=skeleton), walk over to pick up'},
+  ref22: {zh:'把出刀指令绑定到 P 键，按 P 即在脚下生成', en:'Bind the knife-spawn command to the P key'},
+  ref23: {zh:'解除 P 键的绑定', en:'Remove the P key binding'},
+  ref24: {zh:'第三人称视角 / 恢复第一人称', en:'Third-person view / back to first person'},
+};
+
 /* ================= 模块定义 ================= */
 const MODULES = [
   /* ---------- 人机对局 ---------- */
   {
-    id:'bot', cat:'人机对局', icon:'🤖', name:'人机对战配置',
+    id:'bot', cat:'人机对局', enCat:'Bots', icon:'🤖', name:'人机对战配置', enName:'Bot Match Setup',
     desc:'设置我方阵营、人机数量与难度（含 5v5 / 1v5 场景）',
+    enDesc:'Set your team, bot count and difficulty (5v5 / 1v5)',
     params:[
-      {key:'side',    label:'我方阵营',      type:'select', def:'CT',
-       options:[{v:'CT',t:'CT 反恐精英'},{v:'T',t:'T 恐怖分子'}]},
-      {key:'enemy',   label:'敌方人机数量',  type:'number', min:0, max:10, def:5},
-      {key:'ally',    label:'队友人机数量',  type:'number', min:0, max:10, def:4},
-      {key:'diff',    label:'人机难度',      type:'select', def:5, options:[1,2,3,4,5]},
-      {key:'freeze',  label:'冻结时间（秒）', type:'number', min:0, max:60, def:3},
+      {key:'side',    label:'我方阵营',     enLabel:'Your Team',   type:'select', def:'CT',
+       options:[{v:'CT',t:'CT 反恐精英',en:'CT (Counter-Terrorist)'},{v:'T',t:'T 恐怖分子',en:'T (Terrorist)'}]},
+      {key:'enemy',   label:'敌方人机数量', enLabel:'Enemy Bots',   type:'number', min:0, max:10, def:5},
+      {key:'ally',    label:'队友人机数量', enLabel:'Ally Bots',    type:'number', min:0, max:10, def:4},
+      {key:'diff',    label:'人机难度',     enLabel:'Bot Difficulty', type:'select', def:5, options:[1,2,3,4,5]},
+      {key:'freeze',  label:'冻结时间（秒）', enLabel:'Freeze Time (s)', type:'number', min:0, max:60, def:3},
     ],
     build(p){
       const c=[
@@ -310,12 +369,14 @@ const MODULES = [
     }
   },
   {
-    id:'botbehave', cat:'人机对局', icon:'🎯', name:'人机行为设置',
+    id:'botbehave', cat:'人机对局', enCat:'Bots', icon:'🎯', name:'人机行为设置', enName:'Bot Behavior',
     desc:'人机站桩当靶子，或限制人机只用刀 / 手枪',
+    enDesc:'Freeze bots as targets, or restrict them to knife / pistol',
     params:[
-      {key:'stop', label:'人机站桩', type:'select', def:1, options:[{v:1,t:'站桩不动'},{v:0,t:'正常移动'}]},
-      {key:'weapon', label:'人机武器', type:'select', def:'none',
-       options:[{v:'none',t:'不限'},{v:'knife',t:'只用刀'},{v:'pistol',t:'只用手枪'}]},
+      {key:'stop', label:'人机站桩', enLabel:'Bots Stand Still', type:'select', def:1,
+       options:[{v:1,t:'站桩不动',en:'Stand still'},{v:0,t:'正常移动',en:'Move'}]},
+      {key:'weapon', label:'人机武器', enLabel:'Bot Weapons', type:'select', def:'none',
+       options:[{v:'none',t:'不限',en:'Any'},{v:'knife',t:'只用刀',en:'Knife only'},{v:'pistol',t:'只用手枪',en:'Pistol only'}]},
     ],
     build(p){
       const c=['sv_cheats 1','bot_stop '+p.stop];
@@ -325,20 +386,20 @@ const MODULES = [
     }
   },
   {
-    id:'kick', cat:'人机对局', icon:'🧹', name:'清除人机',
-    desc:'踢出场上所有人机，重新开始',
+    id:'kick', cat:'人机对局', enCat:'Bots', icon:'🧹', name:'清除人机', enName:'Kick Bots',
+    desc:'踢出场上所有人机，重新开始', enDesc:'Kick all bots and restart the round',
     build(){ return ['sv_cheats 1','bot_kick','mp_restartgame 1']; }
   },
 
   /* ---------- 对局规则 ---------- */
   {
-    id:'round', cat:'对局规则', icon:'⏱️', name:'回合与时间配置',
-    desc:'冻结时间、回合时长、最大回合数、无限时',
+    id:'round', cat:'对局规则', enCat:'Match Rules', icon:'⏱️', name:'回合与时间配置', enName:'Round & Time',
+    desc:'冻结时间、回合时长、最大回合数、无限时', enDesc:'Freeze time, round length, max rounds, no time limit',
     params:[
-      {key:'freeze',   label:'冻结时间（秒）', type:'number', min:0, max:60, def:0},
-      {key:'time',     label:'回合时长（分钟）', type:'number', min:1, max:999, def:60},
-      {key:'maxrounds',label:'最大回合数',     type:'number', min:1, max:999, def:30},
-      {key:'restart',  label:'立即重启回合',    type:'checkbox', def:true},
+      {key:'freeze',   label:'冻结时间（秒）', enLabel:'Freeze Time (s)',  type:'number', min:0, max:60, def:0},
+      {key:'time',     label:'回合时长（分钟）', enLabel:'Round Length (min)', type:'number', min:1, max:999, def:60},
+      {key:'maxrounds',label:'最大回合数',     enLabel:'Max Rounds',       type:'number', min:1, max:999, def:30},
+      {key:'restart',  label:'立即重启回合',    enLabel:'Restart round now', type:'checkbox', def:true},
     ],
     build(p){
       const c=['sv_cheats 1',
@@ -353,12 +414,12 @@ const MODULES = [
     }
   },
   {
-    id:'buy', cat:'对局规则', icon:'💰', name:'购买配置',
-    desc:'任意地点购买 + 超长购买时间 + 满钱',
+    id:'buy', cat:'对局规则', enCat:'Match Rules', icon:'💰', name:'购买配置', enName:'Buy Settings',
+    desc:'任意地点购买 + 超长购买时间 + 满钱', enDesc:'Buy anywhere + long buy time + full money',
     params:[
-      {key:'anywhere',label:'任意地点购买',   type:'checkbox', def:true},
-      {key:'buytime', label:'购买时间（秒）', type:'number', min:1, max:99999, def:9999},
-      {key:'money',   label:'初始/最高金钱',  type:'number', min:0, max:16000, def:16000},
+      {key:'anywhere',label:'任意地点购买',   enLabel:'Buy Anywhere',   type:'checkbox', def:true},
+      {key:'buytime', label:'购买时间（秒）', enLabel:'Buy Time (s)',    type:'number', min:1, max:99999, def:9999},
+      {key:'money',   label:'初始/最高金钱',  enLabel:'Start / Max Money', type:'number', min:0, max:16000, def:16000},
     ],
     build(p){
       const c=['sv_cheats 1','mp_maxmoney '+p.money,'mp_startmoney '+p.money];
@@ -370,88 +431,90 @@ const MODULES = [
 
   /* ---------- 玩家增强 ---------- */
   {
-    id:'hp', cat:'玩家增强', icon:'❤️', name:'设置血量',
+    id:'hp', cat:'玩家增强', enCat:'Player Boost', icon:'❤️', name:'设置血量', enName:'Set Health',
     desc:'buddha 锁血方案设置血量（buddha_reset_hp 为改血量核心指令）',
+    enDesc:'Set HP via buddha lock (buddha_reset_hp is the core command)',
     params:[
-      {key:'hp',   label:'目标血量',    type:'number', min:1, max:99999, def:1000},
+      {key:'hp',   label:'目标血量',  enLabel:'Target HP',  type:'number', min:1, max:99999, def:1000},
     ],
     build(p){
       return ['sv_cheats 1','buddha 1','buddha_reset_hp '+p.hp,'buddha 0'];
     }
   },
   {
-    id:'ammo', cat:'玩家增强', icon:'🔁', name:'无限弹药',
-    desc:'子弹打不完',
+    id:'ammo', cat:'玩家增强', enCat:'Player Boost', icon:'🔁', name:'无限弹药', enName:'Infinite Ammo',
+    desc:'子弹打不完', enDesc:'Never run out of bullets',
     params:[
-      {key:'mode', label:'模式', type:'select', def:1,
-       options:[{v:1,t:'无限弹药'},{v:2,t:'无限且免换弹'}]},
+      {key:'mode', label:'模式', enLabel:'Mode', type:'select', def:1,
+       options:[{v:1,t:'无限弹药',en:'Infinite ammo'},{v:2,t:'无限且免换弹',en:'Infinite, no reload'}]},
     ],
     build(p){ return ['sv_cheats 1','sv_infinite_ammo '+p.mode]; }
   },
   {
-    id:'recoil', cat:'玩家增强', icon:'🎯', name:'无后坐力',
-    desc:'weapon_recoil_scale 0，压枪变直线',
+    id:'recoil', cat:'玩家增强', enCat:'Player Boost', icon:'🎯', name:'无后坐力', enName:'No Recoil',
+    desc:'weapon_recoil_scale 0，压枪变直线', enDesc:'weapon_recoil_scale 0 — laser beam',
     build(){ return ['sv_cheats 1','weapon_recoil_scale 0']; }
   },
   {
-    id:'jump', cat:'玩家增强', icon:'🦘', name:'跳跃高度',
-    desc:'加大跳跃力度（默认约 301）',
+    id:'jump', cat:'玩家增强', enCat:'Player Boost', icon:'🦘', name:'跳跃高度', enName:'Jump Height',
+    desc:'加大跳跃力度（默认约 301）', enDesc:'Boost jump impulse (default ~301)',
     params:[
-      {key:'v', label:'跳跃力度', type:'number', min:0, max:9999, def:1000},
+      {key:'v', label:'跳跃力度', enLabel:'Jump Impulse', type:'number', min:0, max:9999, def:1000},
     ],
     build(p){ return ['sv_cheats 1','sv_jump_impulse '+p.v]; }
   },
   {
-    id:'gravity', cat:'玩家增强', icon:'🌌', name:'重力',
-    desc:'0 = 无重力漂浮，800 = 正常',
+    id:'gravity', cat:'玩家增强', enCat:'Player Boost', icon:'🌌', name:'重力', enName:'Gravity',
+    desc:'0 = 无重力漂浮，800 = 正常', enDesc:'0 = zero gravity, 800 = normal',
     params:[
-      {key:'v', label:'重力值', type:'number', min:0, max:8000, def:0},
+      {key:'v', label:'重力值', enLabel:'Gravity', type:'number', min:0, max:8000, def:0},
     ],
     build(p){ return ['sv_cheats 1','sv_gravity '+p.v]; }
   },
   {
-    id:'slowmo', cat:'玩家增强', icon:'🐢', name:'慢动作',
-    desc:'时间流速 0.2 = 慢动作回放，1 = 正常',
+    id:'slowmo', cat:'玩家增强', enCat:'Player Boost', icon:'🐢', name:'慢动作', enName:'Slow Motion',
+    desc:'时间流速 0.2 = 慢动作回放，1 = 正常', enDesc:'Timescale 0.2 = slow-mo replay, 1 = normal',
     params:[
-      {key:'v', label:'时间流速', type:'number', min:0.1, max:1, step:0.1, def:0.2},
+      {key:'v', label:'时间流速', enLabel:'Timescale', type:'number', min:0.1, max:1, step:0.1, def:0.2},
     ],
     build(p){ return ['sv_cheats 1','host_timescale '+p.v]; }
   },
   {
-    id:'third', cat:'玩家增强', icon:'🎥', name:'视角切换',
-    desc:'第三人称观感 / 恢复第一人称',
+    id:'third', cat:'玩家增强', enCat:'Player Boost', icon:'🎥', name:'视角切换', enName:'Camera View',
+    desc:'第三人称观感 / 恢复第一人称', enDesc:'Third person / back to first person',
     params:[
-      {key:'mode', label:'视角', type:'select', def:'thirdperson',
-       options:[{v:'thirdperson',t:'第三人称'},{v:'firstperson',t:'第一人称'}]},
+      {key:'mode', label:'视角', enLabel:'View', type:'select', def:'thirdperson',
+       options:[{v:'thirdperson',t:'第三人称',en:'Third person'},{v:'firstperson',t:'第一人称',en:'First person'}]},
     ],
     build(p){ return ['sv_cheats 1',p.mode]; }
   },
 
   /* ---------- 武器 ---------- */
   {
-    id:'weapon', cat:'武器', icon:'🔫', name:'给自己武器',
+    id:'weapon', cat:'武器', enCat:'Weapons', icon:'🔫', name:'给自己武器', enName:'Give Weapon',
     desc:'give 直接获得武器；CS2 刀改用 subclass 生成（已自动处理）',
+    enDesc:'Give guns directly; knives use subclass in CS2 (handled automatically)',
     params:[
-      {key:'w', label:'武器', type:'select', def:'knife:515',
+      {key:'w', label:'武器', enLabel:'Weapon', type:'select', def:'knife:515',
        options:[
-         {v:'knife:515',t:'蝴蝶刀（生成地上，拾取）'},
-         {v:'knife:507',t:'爪子刀 Karambit'},
-         {v:'knife:508',t:'M9 刺刀'},
-         {v:'knife:514',t:'Bowie 弯刀'},
-         {v:'knife:525',t:'骷髅刀 Skeleton'},
-         {v:'knife:524',t:'默认小刀'},
-         {v:'weapon_awp',            t:'AWP 大狙'},
-         {v:'weapon_ssg08',          t:'SSG 08 鸟狙'},
-         {v:'weapon_ak47',           t:'AK-47'},
-         {v:'weapon_m4a1_silencer',  t:'M4A1-S'},
-         {v:'weapon_m4a1',           t:'M4A4'},
-         {v:'weapon_deagle',         t:'沙漠之鹰'},
-         {v:'weapon_usp_silencer',   t:'USP-S'},
-         {v:'weapon_glock',          t:'Glock-18'},
-         {v:'weapon_mp9',            t:'MP9'},
-         {v:'weapon_hegrenade',      t:'高爆手雷'},
-         {v:'weapon_flashbang',      t:'闪光弹'},
-         {v:'weapon_smokegrenade',   t:'烟雾弹'},
+         {v:'knife:515',t:'蝴蝶刀（生成地上，拾取）',en:'Butterfly (spawn & pick up)'},
+         {v:'knife:507',t:'爪子刀 Karambit',en:'Karambit'},
+         {v:'knife:508',t:'M9 刺刀',en:'M9 Bayonet'},
+         {v:'knife:514',t:'Bowie 弯刀',en:'Bowie Knife'},
+         {v:'knife:525',t:'骷髅刀 Skeleton',en:'Skeleton Knife'},
+         {v:'knife:524',t:'默认小刀',en:'Default Knife'},
+         {v:'weapon_awp',            t:'AWP 大狙',en:'AWP'},
+         {v:'weapon_ssg08',          t:'SSG 08 鸟狙',en:'SSG 08'},
+         {v:'weapon_ak47',           t:'AK-47',en:'AK-47'},
+         {v:'weapon_m4a1_silencer',  t:'M4A1-S',en:'M4A1-S'},
+         {v:'weapon_m4a1',           t:'M4A4',en:'M4A4'},
+         {v:'weapon_deagle',         t:'沙漠之鹰',en:'Desert Eagle'},
+         {v:'weapon_usp_silencer',   t:'USP-S',en:'USP-S'},
+         {v:'weapon_glock',          t:'Glock-18',en:'Glock-18'},
+         {v:'weapon_mp9',            t:'MP9',en:'MP9'},
+         {v:'weapon_hegrenade',      t:'高爆手雷',en:'HE Grenade'},
+         {v:'weapon_flashbang',      t:'闪光弹',en:'Flashbang'},
+         {v:'weapon_smokegrenade',   t:'烟雾弹',en:'Smoke Grenade'},
        ]},
     ],
     build(p){
@@ -462,28 +525,32 @@ const MODULES = [
     }
   },
   {
-    id:'knifeshow', cat:'武器', icon:'🔪', name:'蝴蝶刀展示（示例）',
+    id:'knifeshow', cat:'武器', enCat:'Weapons', icon:'🔪', name:'蝴蝶刀展示（示例）', enName:'Butterfly Showcase',
     desc:'示例特效：允许丢刀 + 生成蝴蝶刀实体，走过去拾取（正常视角）',
+    enDesc:'Enable drop-knife + spawn butterfly knife, walk over to pick up (normal camera)',
     build(){ return ['sv_cheats 1','mp_drop_knife_enable true','subclass_create 515']; }
   },
   {
-    id:'dropknife', cat:'武器', icon:'🪂', name:'允许丢弃刀/枪',
-    desc:'mp_drop_knife_enable true，可以丢出刀',
+    id:'dropknife', cat:'武器', enCat:'Weapons', icon:'🪂', name:'允许丢弃刀/枪', enName:'Allow Dropping Knife/Gun',
+    desc:'mp_drop_knife_enable true，可以丢出刀', enDesc:'mp_drop_knife_enable true — drop your knife',
     build(){ return ['sv_cheats 1','mp_drop_knife_enable true']; }
   },
   {
-    id:'bindknife', cat:'武器', icon:'⌨️', name:'按键绑定 · 一键出刀',
+    id:'bindknife', cat:'武器', enCat:'Weapons', icon:'⌨️', name:'按键绑定 · 一键出刀', enName:'Keybind · One-key Knife',
     desc:'按 P 等按键即可生成刀。网上用不了是因为 give 刀在 CS2 已失效，刀必须走 subclass',
+    enDesc:'Press a key to spawn a knife. Online guides fail because give is dead for knives in CS2 — subclass is required',
     params:[
-      {key:'key', label:'按键', type:'text', def:'p', hint:'字母直接写，如 p；功能键如 F1、F2；鼠标 MOUSE4 / MOUSE5'},
-      {key:'knife', label:'刀型', type:'select', def:515,
+      {key:'key', label:'按键', enLabel:'Key', type:'text', def:'p',
+       hint:'字母直接写，如 p；功能键如 F1、F2；鼠标 MOUSE4 / MOUSE5',
+       enHint:'Letters like p; function keys F1, F2…; mouse MOUSE4 / MOUSE5'},
+      {key:'knife', label:'刀型', enLabel:'Knife', type:'select', def:515,
        options:[
-         {v:515,t:'蝴蝶刀 Butterfly'},
-         {v:507,t:'爪子刀 Karambit'},
-         {v:508,t:'M9 刺刀'},
-         {v:514,t:'Bowie 弯刀'},
-         {v:525,t:'骷髅刀 Skeleton'},
-         {v:524,t:'默认小刀'},
+         {v:515,t:'蝴蝶刀 Butterfly',en:'Butterfly'},
+         {v:507,t:'爪子刀 Karambit',en:'Karambit'},
+         {v:508,t:'M9 刺刀',en:'M9 Bayonet'},
+         {v:514,t:'Bowie 弯刀',en:'Bowie'},
+         {v:525,t:'骷髅刀 Skeleton',en:'Skeleton'},
+         {v:524,t:'默认小刀',en:'Default'},
        ]},
     ],
     build(p){
@@ -491,23 +558,23 @@ const MODULES = [
     }
   },
   {
-    id:'unbindkey', cat:'武器', icon:'🗝️', name:'解除按键绑定',
-    desc:'取消指定按键的绑定（比如之前绑的一键出刀）',
+    id:'unbindkey', cat:'武器', enCat:'Weapons', icon:'🗝️', name:'解除按键绑定', enName:'Unbind Key',
+    desc:'取消指定按键的绑定（比如之前绑的一键出刀）', enDesc:'Remove a key binding (e.g. the knife key)',
     params:[
-      {key:'key', label:'按键', type:'text', def:'p'},
+      {key:'key', label:'按键', enLabel:'Key', type:'text', def:'p'},
     ],
     build(p){ return ['unbind '+p.key]; }
   },
 
   /* ---------- 训练辅助 ---------- */
   {
-    id:'train', cat:'训练辅助', icon:'📡', name:'弹道与投掷物轨迹',
-    desc:'显示弹着点 + 手雷飞行轨迹',
+    id:'train', cat:'训练辅助', enCat:'Training', icon:'📡', name:'弹道与投掷物轨迹', enName:'Impacts & Grenade Trajectory',
+    desc:'显示弹着点 + 手雷飞行轨迹', enDesc:'Show bullet impacts + grenade flight paths',
     params:[
-      {key:'impact',     label:'显示弹着点',      type:'checkbox', def:true},
-      {key:'impact_time',label:'弹着点持续（秒）', type:'number', min:1, max:60, def:10},
-      {key:'grenade',    label:'显示手雷轨迹',    type:'checkbox', def:true},
-      {key:'grenade_time',label:'轨迹持续（秒）', type:'number', min:1, max:60, def:10},
+      {key:'impact',     label:'显示弹着点',      enLabel:'Show bullet impacts',   type:'checkbox', def:true},
+      {key:'impact_time',label:'弹着点持续（秒）', enLabel:'Impact time (s)',       type:'number', min:1, max:60, def:10},
+      {key:'grenade',    label:'显示手雷轨迹',    enLabel:'Show grenade trajectory', type:'checkbox', def:true},
+      {key:'grenade_time',label:'轨迹持续（秒）', enLabel:'Trajectory time (s)',    type:'number', min:1, max:60, def:10},
     ],
     build(p){
       const c=['sv_cheats 1'];
@@ -517,10 +584,10 @@ const MODULES = [
     }
   },
   {
-    id:'nades', cat:'训练辅助', icon:'💣', name:'无限手雷',
-    desc:'扩充投掷物携带上限（默认 1 颗）',
+    id:'nades', cat:'训练辅助', enCat:'Training', icon:'💣', name:'无限手雷', enName:'Infinite Grenades',
+    desc:'扩充投掷物携带上限（默认 1 颗）', enDesc:'Raise grenade carry limit (default 1)',
     params:[
-      {key:'n', label:'携带上限', type:'number', min:0, max:10, def:5},
+      {key:'n', label:'携带上限', enLabel:'Carry Limit', type:'number', min:0, max:10, def:5},
     ],
     build(p){ return ['sv_cheats 1','ammo_grenade_limit_total '+p.n]; }
   },
@@ -529,23 +596,26 @@ const MODULES = [
 /* ================= 模板 ================= */
 const TEMPLATES = [
   {
-    name:'CT 5v5 · 高难度人机', icon:'🛡️',
+    name:'CT 5v5 · 高难度人机', enName:'CT 5v5 · Hard Bots', icon:'🛡️',
     desc:'我方 CT 满编 5 人，敌方 T 5 人，难度 5，冻结 3 秒',
+    enDesc:'Full CT team of 5 vs 5 T bots, difficulty 5, 3s freeze',
     set(){
       setModule('bot',{side:'CT',enemy:5,ally:4,diff:5,freeze:3});
     }
   },
   {
-    name:'血量 1000 + 蝴蝶刀', icon:'❤️',
+    name:'血量 1000 + 蝴蝶刀', enName:'1000 HP + Butterfly', icon:'❤️',
     desc:'buddha 锁血方案设血量 1000，并生成蝴蝶刀展示',
+    enDesc:'buddha-lock HP to 1000 + butterfly knife showcase',
     set(){
       setModule('hp',{hp:1000});
       setModule('knifeshow',{});
     }
   },
   {
-    name:'1v5 人机训练', icon:'🎯',
+    name:'1v5 人机训练', enName:'1v5 Bot Training', icon:'🎯',
     desc:'我方 CT 一人，敌方 T 5 人，高难度，练残局',
+    enDesc:'Solo CT vs 5 T bots, hard difficulty, clutch practice',
     set(){
       setModule('bot',{side:'CT',enemy:5,ally:0,diff:5,freeze:3});
     }
@@ -558,20 +628,22 @@ function modParamsHtml(m){
   let p = '<div class="mod-params">';
   for(const pr of m.params){
     const id = 'p_'+m.id+'_'+pr.key;
+    const label = T(pr.label, pr.enLabel);
+    const hint = pr.hint ? T(pr.hint, pr.enHint) : '';
     if(pr.type==='select'){
       const opts = pr.options.map(o=>{
         const v = (typeof o==='object') ? o.v : o;
-        const t = (typeof o==='object') ? o.t : o;
-        return '<option value="'+v+'"'+(String(v)===String(pr.def)?' selected':'')+'>'+t+'</option>';
+        const txt = (typeof o==='object') ? T(o.t, o.en) : o;
+        return '<option value="'+v+'"'+(String(v)===String(pr.def)?' selected':'')+'>'+txt+'</option>';
       }).join('');
-      p += '<label class="pr">'+pr.label+'<select id="'+id+'" data-key="'+pr.key+'">'+opts+'</select></label>';
+      p += '<label class="pr">'+label+'<select id="'+id+'" data-key="'+pr.key+'">'+opts+'</select></label>';
     }else if(pr.type==='checkbox'){
-      p += '<label class="pr chk"><input type="checkbox" id="'+id+'" data-key="'+pr.key+'"'+(pr.def?' checked':'')+'><span>'+pr.label+'</span></label>';
+      p += '<label class="pr chk"><input type="checkbox" id="'+id+'" data-key="'+pr.key+'"'+(pr.def?' checked':'')+'><span>'+label+'</span></label>';
     }else if(pr.type==='text'){
-      p += '<label class="pr">'+pr.label+(pr.hint?'<em>'+pr.hint+'</em>':'')+'<input type="text" id="'+id+'" data-key="'+pr.key+'" value="'+pr.def+'"></label>';
+      p += '<label class="pr">'+label+(hint?'<em>'+hint+'</em>':'')+'<input type="text" id="'+id+'" data-key="'+pr.key+'" value="'+pr.def+'"></label>';
     }else{
       const step = pr.step!==undefined ? ' step="'+pr.step+'"' : ' step="1"';
-      p += '<label class="pr">'+pr.label+'<input type="number" id="'+id+'" data-key="'+pr.key+'" min="'+(pr.min??0)+'" max="'+(pr.max??99999)+'"'+step+' value="'+pr.def+'"></label>';
+      p += '<label class="pr">'+label+'<input type="number" id="'+id+'" data-key="'+pr.key+'" min="'+(pr.min??0)+'" max="'+(pr.max??99999)+'"'+step+' value="'+pr.def+'"></label>';
     }
   }
   p += '</div>';
@@ -584,15 +656,15 @@ function renderModules(){
   for(const m of MODULES) if(!cats.includes(m.cat)) cats.push(m.cat);
   let html = '';
   for(const cat of cats){
-    html += '<div class="cat">'+cat+'</div><div class="mod-grid">';
+    html += '<div class="cat">'+T(cat, MODULES.find(x=>x.cat===cat).enCat)+'</div><div class="mod-grid">';
     for(const m of MODULES.filter(x=>x.cat===cat)){
       html += '<div class="mod" data-id="'+m.id+'">'+
         '<div class="mod-head">'+
           '<span class="mod-check">✓</span>'+
           '<span class="mod-icon">'+m.icon+'</span>'+
           '<div class="mod-info">'+
-            '<div class="mod-name">'+m.name+'</div>'+
-            (m.desc?'<div class="mod-desc">'+m.desc+'</div>':'')+
+            '<div class="mod-name">'+T(m.name, m.enName)+'</div>'+
+            (m.desc?'<div class="mod-desc">'+T(m.desc, m.enDesc)+'</div>':'')+
           '</div>'+
         '</div>'+
         modParamsHtml(m)+
@@ -608,7 +680,7 @@ function renderTemplates(){
   grid.innerHTML = TEMPLATES.map((t,i)=>
     '<div class="tpl" data-tpl="'+i+'">'+
       '<span class="tpl-icon">'+t.icon+'</span>'+
-      '<div><div class="tpl-name">'+t.name+'</div><div class="tpl-desc">'+t.desc+'</div></div>'+
+      '<div><div class="tpl-name">'+T(t.name, t.enName)+'</div><div class="tpl-desc">'+T(t.desc, t.enDesc)+'</div></div>'+
     '</div>'
   ).join('');
 }
@@ -644,18 +716,66 @@ function generate(){
   const full = cmds.join(';');
   const out = document.getElementById('outText');
   if(!full){
-    out.textContent = '还没有生成指令，先在左侧勾选模块吧。';
+    out.textContent = t('outEmpty2');
     out.classList.add('empty');
   }else{
     out.classList.remove('empty');
     out.textContent = currentView==='lines' ? cmds.join(';\n') : full;
   }
-  document.getElementById('cmdCount').textContent = ' '+cmds.length+' 条';
-  document.getElementById('selCount').textContent = '已选 '+selectedModules().length+' 个模块';
+  document.getElementById('cmdCount').textContent = tf('cmdCount',{n:cmds.length});
+  document.getElementById('selCount').textContent = tf('selCount',{n:selectedModules().length});
   document.getElementById('outHint').textContent = cmds.length
-    ? cmds.length+' 条指令 · '+full.length+' 字符 · 分号分隔，可直接整段粘贴进游戏控制台'
+    ? tf('outHint',{n:cmds.length, c:full.length})
     : '';
 }
+
+/* ================= 语言切换 ================= */
+function snapshotState(){
+  const s = {};
+  for(const m of MODULES){
+    const el = document.querySelector('.mod[data-id="'+m.id+'"]');
+    if(!el) continue;
+    s[m.id] = { active: el.classList.contains('active'), params: getParams(m) };
+  }
+  return s;
+}
+function restoreState(s){
+  for(const id in s){
+    const mod = MODULES.find(m=>m.id===id);
+    const el = document.querySelector('.mod[data-id="'+id+'"]');
+    if(!el || !mod) continue;
+    if(s[id].active) el.classList.add('active');
+    for(const pr of (mod.params||[])){
+      const input = document.getElementById('p_'+id+'_'+pr.key);
+      if(!input || !(pr.key in s[id].params)) continue;
+      if(pr.type==='checkbox') input.checked = !!s[id].params[pr.key];
+      else input.value = s[id].params[pr.key];
+    }
+  }
+}
+
+function applyStaticLang(){
+  document.documentElement.lang = lang==='zh' ? 'zh-CN' : 'en';
+  document.title = lang==='zh' ? 'CS2 指令生成器 · 人机练习房' : 'CS2 Command Generator · Practice Lobby';
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k = el.dataset.i18n;
+    if(el.dataset.i18nHtml) el.innerHTML = t(k);
+    else el.textContent = t(k);
+  });
+  document.getElementById('langBtn').textContent = lang==='zh' ? 'EN' : '中文';
+}
+
+const langBtn = document.getElementById('langBtn');
+langBtn.addEventListener('click', ()=>{
+  const snap = snapshotState();
+  lang = lang==='zh' ? 'en' : 'zh';
+  try{ localStorage.setItem('cs2gen_lang', lang); }catch(e){}
+  applyStaticLang();
+  renderModules();
+  renderTemplates();
+  restoreState(snap);
+  generate();
+});
 
 /* ================= 事件 ================= */
 document.getElementById('modList').addEventListener('click', e=>{
@@ -718,12 +838,13 @@ copyBtn.addEventListener('click', async ()=>{
     document.execCommand('copy');
     ta.remove();
   }
-  copyBtn.textContent = '✓ 已复制';
+  copyBtn.textContent = t('copied');
   copyBtn.classList.add('done');
-  setTimeout(()=>{ copyBtn.textContent='📋 复制指令'; copyBtn.classList.remove('done'); },1600);
+  setTimeout(()=>{ copyBtn.textContent = t('copyBtn'); copyBtn.classList.remove('done'); },1600);
 });
 
 /* ================= 启动 ================= */
+applyStaticLang();
 renderModules();
 renderTemplates();
 generate();
