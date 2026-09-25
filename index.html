@@ -253,6 +253,7 @@ footer b{color:var(--accent);}
         <tr><td>bot_kick</td><td data-i18n="ref7">清除所有现有人机</td></tr>
         <tr><td>bot_stop 1</td><td data-i18n="ref8">人机站桩不动，当活靶子练枪</td></tr>
         <tr><td>mp_restartgame 1</td><td data-i18n="ref9">重启当前回合，让指令生效</td></tr>
+        <tr><td>mp_warmup_end</td><td data-i18n="refWarmup">结束练习模式默认的无限训练（热身）时间，直接进入正式回合</td></tr>
         <tr><td>buddha 1 / 0</td><td data-i18n="ref10">开启 / 关闭锁血（血打不完）</td></tr>
         <tr><td>buddha_reset_hp 1000</td><td data-i18n="ref11">改血量核心指令：锁血状态下把血量刷到设定值</td></tr>
         <tr><td>give weapon_xxx</td><td data-i18n="ref12">直接获得指定武器（枪械/道具；CS2 的刀不能 give，需用 subclass）</td></tr>
@@ -318,6 +319,7 @@ const I18N = {
   ref7:  {zh:'清除所有现有人机', en:'Kick all existing bots'},
   ref8:  {zh:'人机站桩不动，当活靶子练枪', en:'Bots stand still — target practice'},
   ref9:  {zh:'重启当前回合，让指令生效', en:'Restart the round to apply changes'},
+  refWarmup: {zh:'结束练习模式默认的无限训练（热身）时间，直接进入正式回合', en:'End the unlimited training/warmup in practice mode and start the real round'},
   ref10: {zh:'开启 / 关闭锁血（血打不完）', en:'Enable / disable HP lock (cannot die)'},
   ref11: {zh:'改血量核心指令：锁血状态下把血量刷到设定值', en:'Core HP command: refresh HP to the value while locked'},
   ref12: {zh:'直接获得指定武器（枪械/道具；CS2 的刀不能 give，需用 subclass）', en:'Give any weapon (guns & items; knives need subclass in CS2)'},
@@ -410,6 +412,20 @@ const MODULES = [
         'mp_maxrounds '+p.maxrounds,
         'mp_timelimit 0'];
       if(p.restart) c.push('mp_restartgame 1');
+      return c;
+    }
+  },
+  {
+    id:'endwarmup', cat:'对局规则', enCat:'Match Rules', icon:'⏭️', name:'结束训练时间', enName:'End Training Time',
+    desc:'练习模式默认处于无限训练（热身）阶段，执行后立即进入正式回合',
+    enDesc:'Practice mode starts in unlimited training/warmup; this jumps straight into the real round',
+    params:[
+      {key:'setzero', label:'同时把热身时长设为 0', enLabel:'Also set warmup time to 0', type:'checkbox', def:true},
+    ],
+    build(p){
+      const c=['mp_warmup_pausetimer 0'];
+      if(p.setzero) c.push('mp_warmuptime 0');
+      c.push('mp_warmup_end');
       return c;
     }
   },
