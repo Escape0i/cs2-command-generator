@@ -163,6 +163,12 @@ button.ghost{background:transparent;}
   flex:1;padding:6px 0;font-size:12px;border-radius:7px;background:transparent;color:var(--dim);
 }
 .view-toggle button.on{background:var(--panel2);color:var(--accent);border-color:var(--accent-dim);}
+.global-opt{
+  display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim);
+  margin-bottom:12px;cursor:pointer;user-select:none;
+}
+.global-opt input{accent-color:var(--accent);width:14px;height:14px;cursor:pointer;}
+.global-opt code{font-family:var(--mono);color:var(--accent);font-size:11px;}
 #outText{
   background:#0d1117;border:1px solid var(--border);border-radius:10px;
   padding:14px;font-family:var(--mono);font-size:12.5px;line-height:1.7;
@@ -234,6 +240,7 @@ footer b{color:var(--accent);}
       <div class="out-title"><span data-i18n="outTitle">生成指令</span><span id="cmdCount"> 0 条</span></div>
       <button id="copyBtn" data-i18n="copyBtn">📋 复制指令</button>
     </div>
+    <label class="global-opt"><input type="checkbox" id="autoWarmup" checked><span data-i18n="autoWarmup">默认附加：热身时长归零</span></label>
     <div class="view-toggle" id="viewToggle">
       <button data-view="compact" class="on" data-i18n="viewCompact">一行紧凑</button>
       <button data-view="lines" data-i18n="viewLines">分行预览</button>
@@ -266,7 +273,7 @@ footer b{color:var(--accent);}
         <tr><td>sv_jump_impulse 1000</td><td data-i18n="ref19">跳跃力度，默认约 301</td></tr>
         <tr><td>mp_drop_knife_enable true</td><td data-i18n="ref20">允许丢弃/展示刀（蝴蝶刀需要）</td></tr>
         <tr><td>subclass_create 515</td><td data-i18n="ref21">CS2 出刀专用：生成蝴蝶刀实体在地上（515=蝴蝶刀，507=爪子刀，508=M9，514=弯刀，525=骷髅刀），走过去拾取</td></tr>
-        <tr><td>bind p "subclass_create 515"</td><td data-i18n="ref22">把出刀指令绑定到 P 键，按 P 即在脚下生成</td></tr>
+        <tr><td>bind p "subclass_create 515"</td><td data-i18n="ref22">把出刀指令绑定到 P 键；多人房中发给好友、在自己控制台粘贴同样有效（房主需先开 sv_cheats）</td></tr>
         <tr><td>unbind p</td><td data-i18n="ref23">解除 P 键的绑定</td></tr>
         <tr><td>thirdperson / firstperson</td><td data-i18n="ref24">第三人称视角 / 恢复第一人称</td></tr>
       </table>
@@ -302,6 +309,7 @@ const I18N = {
   copied:      {zh:'✓ 已复制', en:'✓ Copied'},
   viewCompact: {zh:'一行紧凑', en:'One-line'},
   viewLines:   {zh:'分行预览', en:'Multi-line'},
+  autoWarmup:  {zh:'默认附加：热身时长归零（mp_warmuptime 0）', en:'Always prepend: warmup time 0 (mp_warmuptime 0)'},
   outEmpty:    {zh:'在左侧勾选模块、设置参数，这里会自动生成可以整段粘贴到游戏控制台的指令。', en:'Check modules and set parameters on the left. Generated commands appear here, ready to paste into the game console.'},
   outEmpty2:   {zh:'还没有生成指令，先在左侧勾选模块吧。', en:'No commands yet. Select some modules on the left.'},
   selCount:    {zh:'已选 {n} 个模块', en:'{n} modules selected'},
@@ -332,7 +340,7 @@ const I18N = {
   ref19: {zh:'跳跃力度，默认约 301', en:'Jump impulse, default ~301'},
   ref20: {zh:'允许丢弃/展示刀（蝴蝶刀需要）', en:'Allow dropping / showing knives (butterfly needs it)'},
   ref21: {zh:'CS2 出刀专用：生成蝴蝶刀实体在地上（515=蝴蝶刀，507=爪子刀，508=M9，514=弯刀，525=骷髅刀），走过去拾取', en:'CS2 knife command: spawn butterfly on the ground (515=butterfly, 507=karambit, 508=M9, 514=bowie, 525=skeleton), walk over to pick up'},
-  ref22: {zh:'把出刀指令绑定到 P 键，按 P 即在脚下生成', en:'Bind the knife-spawn command to the P key'},
+  ref22: {zh:'把出刀指令绑定到 P 键；多人房中发给好友、在自己控制台粘贴同样有效（房主需先开 sv_cheats）', en:'Bind knife spawn to P; in multiplayer, friends can paste the same line in their own console (host must enable sv_cheats first)'},
   ref23: {zh:'解除 P 键的绑定', en:'Remove the P key binding'},
   ref24: {zh:'第三人称视角 / 恢复第一人称', en:'Third-person view / back to first person'},
 };
@@ -417,17 +425,9 @@ const MODULES = [
   },
   {
     id:'endwarmup', cat:'对局规则', enCat:'Match Rules', icon:'⏭️', name:'结束训练时间', enName:'End Training Time',
-    desc:'练习模式默认处于无限训练（热身）阶段，执行后立即进入正式回合',
+    desc:'练习模式默认处于无限训练（热身）阶段，执行后立即进入正式回合（热身归零已由默认附加处理）',
     enDesc:'Practice mode starts in unlimited training/warmup; this jumps straight into the real round',
-    params:[
-      {key:'setzero', label:'同时把热身时长设为 0', enLabel:'Also set warmup time to 0', type:'checkbox', def:true},
-    ],
-    build(p){
-      const c=['mp_warmup_pausetimer 0'];
-      if(p.setzero) c.push('mp_warmuptime 0');
-      c.push('mp_warmup_end');
-      return c;
-    }
+    build(){ return ['mp_warmup_pausetimer 0','mp_warmup_end']; }
   },
   {
     id:'buy', cat:'对局规则', enCat:'Match Rules', icon:'💰', name:'购买配置', enName:'Buy Settings',
@@ -582,6 +582,35 @@ const MODULES = [
     build(p){ return ['unbind '+p.key]; }
   },
 
+  /* ---------- 多人房间 ---------- */
+  {
+    id:'hostprep', cat:'多人房间', enCat:'Multiplayer', icon:'🏠', name:'房主准备（好友加入前）', enName:'Host Prep (before friends join)',
+    desc:'房主在好友 connect 前执行一次，开启作弊与允许丢刀；之后好友才能自己出刀',
+    enDesc:'Run once as host before friends connect — enables cheats & knife dropping so guests can spawn knives too',
+    build(){ return ['sv_cheats 1','mp_drop_knife_enable true']; }
+  },
+  {
+    id:'guestknife', cat:'多人房间', enCat:'Multiplayer', icon:'👥', name:'好友出刀绑定（发给好友）', enName:'Guest Knife Bind (send to friend)',
+    desc:'房主已准备后，把这段发给好友，好友在自己控制台粘贴，按 P 即可在自己脚下生成刀',
+    enDesc:'After host prep, send this to your friend — they paste it in their own console and press the key to spawn a knife',
+    clientOnly:true,
+    params:[
+      {key:'key', label:'按键', enLabel:'Key', type:'text', def:'p',
+       hint:'字母直接写，如 p；功能键如 F1、F2',
+       enHint:'Letters like p; function keys F1, F2…'},
+      {key:'knife', label:'刀型', enLabel:'Knife', type:'select', def:515,
+       options:[
+         {v:515,t:'蝴蝶刀 Butterfly',en:'Butterfly'},
+         {v:507,t:'爪子刀 Karambit',en:'Karambit'},
+         {v:508,t:'M9 刺刀',en:'M9 Bayonet'},
+         {v:514,t:'Bowie 弯刀',en:'Bowie'},
+         {v:525,t:'骷髅刀 Skeleton',en:'Skeleton'},
+         {v:524,t:'默认小刀',en:'Default'},
+       ]},
+    ],
+    build(p){ return ['bind '+p.key+' "subclass_create '+p.knife+'"']; }
+  },
+
   /* ---------- 训练辅助 ---------- */
   {
     id:'train', cat:'训练辅助', enCat:'Training', icon:'📡', name:'弹道与投掷物轨迹', enName:'Impacts & Grenade Trajectory',
@@ -718,9 +747,14 @@ function selectedModules(){
   return MODULES.filter(m=>document.querySelector('.mod[data-id="'+m.id+'"].active'));
 }
 
+let autoWarmup = true;
+
 function buildAll(){
+  const mods = selectedModules();
   const cmds=[];
-  for(const m of selectedModules()) cmds.push(...m.build(getParams(m)));
+  const clientOnly = mods.length>0 && mods.every(m=>m.clientOnly);
+  if(autoWarmup && !clientOnly) cmds.push('mp_warmuptime 0');
+  for(const m of mods) cmds.push(...m.build(getParams(m)));
   return cmds;
 }
 
@@ -814,6 +848,11 @@ document.getElementById('tplGrid').addEventListener('click', e=>{
   if(!tpl) return;
   document.querySelectorAll('.mod').forEach(m=>m.classList.remove('active'));
   TEMPLATES[+tpl.dataset.tpl].set();
+  generate();
+});
+
+document.getElementById('autoWarmup').addEventListener('change', e=>{
+  autoWarmup = e.target.checked;
   generate();
 });
 
