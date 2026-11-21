@@ -1,6 +1,6 @@
 {
   "name": "cs2-command-generator",
-  "version": "1.3.0",
+  "version": "2.0.0",
   "description": "CS2 practice room console command generator",
   "main": "main.js",
   "author": "Escape",
@@ -15,12 +15,14 @@
     "asar": true,
     "files": [
       "main.js",
-      "index.html"
+      "index.html",
+      "icon.ico"
     ],
     "win": {
       "target": [
         "portable"
       ],
+      "icon": "build/icon.ico",
       "signAndEditExecutable": false
     },
     "portable": {

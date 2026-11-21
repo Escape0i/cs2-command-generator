@@ -3,232 +3,414 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CS2 指令生成器 · 人机练习房</title>
+<title>CS2 指令生成器</title>
+<script>
+/* 首帧前应用已保存的配色，避免闪回默认主题 */
+(function(){
+  try{
+    var th = localStorage.getItem('cs2gen_theme') || 'qingye';
+    document.documentElement.setAttribute('data-theme', th);
+  }catch(e){ document.documentElement.setAttribute('data-theme','qingye'); }
+})();
+</script>
 <style>
-:root{
-  --bg:#0b0e13;
-  --bg2:#10151d;
-  --panel:#141921;
-  --panel2:#1a212c;
-  --border:#232c3a;
-  --text:#e8e6e1;
-  --dim:#8b93a1;
-  --accent:#f2a33c;
-  --accent-dim:#a9712a;
-  --green:#7bc96f;
-  --red:#e0655a;
+/* ================= 主题变量 ================= */
+:root, html[data-theme="qingye"]{
+  --bg:#060d0f; --bg2:#0a1518; --panel:#0d1a1e; --panel2:#122227;
+  --border:#1c3339; --text:#e4f5f3; --dim:#7a9a99;
+  --accent:#3fd0c0; --accent-dim:#1f7d74; --accent-soft:rgba(63,208,192,0.12);
+  --glow:rgba(63,208,192,0.35); --green:#5fd68e; --red:#ff6b6b;
   --mono:Consolas,'JetBrains Mono','Cascadia Code',monospace;
+  --ease:cubic-bezier(.4,0,.2,1);
+}
+html[data-theme="cs2"]{
+  --bg:#0b0e13; --bg2:#10151d; --panel:#141921; --panel2:#1a212c;
+  --border:#232c3a; --text:#e8e6e1; --dim:#8b93a1;
+  --accent:#f2a33c; --accent-dim:#a9712a; --accent-soft:rgba(242,163,60,0.12);
+  --glow:rgba(242,163,60,0.35); --green:#7bc96f; --red:#e0655a;
+}
+html[data-theme="ct"]{
+  --bg:#080e18; --bg2:#0c1420; --panel:#0f1a28; --panel2:#152335;
+  --border:#1e3348; --text:#e2eefb; --dim:#7f96b0;
+  --accent:#5aa9e6; --accent-dim:#2d6ca3; --accent-soft:rgba(90,169,230,0.12);
+  --glow:rgba(90,169,230,0.35); --green:#68d391; --red:#fc8181;
+}
+html[data-theme="t"]{
+  --bg:#12100a; --bg2:#1a160d; --panel:#1e1a11; --panel2:#262217;
+  --border:#3a3220; --text:#f5eeda; --dim:#a3946f;
+  --accent:#e8b64c; --accent-dim:#95711f; --accent-soft:rgba(232,182,76,0.12);
+  --glow:rgba(232,182,76,0.35); --green:#a3d977; --red:#e07a5f;
+}
+html[data-theme="neon"]{
+  --bg:#0a0713; --bg2:#100b1e; --panel:#150f28; --panel2:#1d1533;
+  --border:#2e2148; --text:#ece4ff; --dim:#9385b8;
+  --accent:#b47aff; --accent-dim:#6f3fb0; --accent-soft:rgba(180,122,255,0.12);
+  --glow:rgba(180,122,255,0.40); --green:#5ef2c0; --red:#ff6b8a;
+}
+html[data-theme="night"]{
+  --bg:#080d0a; --bg2:#0c140f; --panel:#101a14; --panel2:#16241b;
+  --border:#203426; --text:#e6f2e8; --dim:#84a08c;
+  --accent:#57c07a; --accent-dim:#2e7347; --accent-soft:rgba(87,192,122,0.12);
+  --glow:rgba(87,192,122,0.35); --green:#8ee06f; --red:#e57373;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{
-  background:linear-gradient(160deg,var(--bg) 0%,var(--bg2) 100%);
+  background:var(--bg);
   color:var(--text);
   font-family:-apple-system,'Segoe UI','Microsoft YaHei',sans-serif;
-  min-height:100vh;
+  min-height:100vh;position:relative;
+  transition:background-color .5s var(--ease),color .35s var(--ease);
 }
-/* ===== Header ===== */
+/* 顶部主题色氛围光 */
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(1100px 520px at 50% -8%,var(--accent-soft),transparent 72%);
+}
+/* 切换配色时的全局颜色过渡（只在切换瞬间生效，不影响日常 hover） */
+body.theme-anim, body.theme-anim *{
+  transition:background-color .5s var(--ease),border-color .5s var(--ease),
+             color .4s var(--ease),box-shadow .5s var(--ease) !important;
+}
+/* ================= 启动动画 ================= */
+#splash{
+  position:fixed;inset:0;z-index:9999;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  animation:spOut .45s var(--ease) 2.55s forwards;
+}
+#splash::before{
+  content:'';position:absolute;inset:0;opacity:.16;pointer-events:none;
+  background-image:
+    linear-gradient(var(--border) 1px,transparent 1px),
+    linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:34px 34px;
+}
+.sp-icon{
+  position:relative;width:108px;height:108px;border-radius:22px;overflow:hidden;
+  margin-bottom:26px;animation:spIcon .85s var(--ease) .12s both;
+}
+.sp-icon img{
+  width:100%;height:100%;display:block;border-radius:22px;
+  box-shadow:0 0 44px -14px var(--glow),0 0 0 1px var(--accent-soft);
+}
+.sp-icon::after{
+  content:'';position:absolute;top:0;left:-60%;width:55%;height:100%;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,.5),transparent);
+  animation:spSheen .92s var(--ease) .82s both;opacity:0;
+}
+.sp-title{
+  font-size:20px;font-weight:600;color:var(--text);
+  letter-spacing:.3em;text-indent:.3em;white-space:nowrap;
+  animation:spTitle .9s var(--ease) .5s both;
+}
+.sp-line{
+  width:150px;height:1px;margin-top:16px;transform-origin:center;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  animation:spLine .85s var(--ease) .8s both;
+}
+.sp-by{
+  margin-top:14px;font-size:10.5px;letter-spacing:.3em;text-indent:.3em;color:var(--dim);
+  animation:spBy .7s var(--ease) 1.35s both;
+}
+@keyframes spIcon{
+  from{opacity:0;transform:scale(.84) translateY(10px);filter:blur(12px);}
+  to{opacity:1;transform:none;filter:blur(0);}
+}
+@keyframes spSheen{
+  0%{left:-60%;opacity:0;}
+  18%{opacity:.9;}
+  100%{left:112%;opacity:0;}
+}
+@keyframes spTitle{
+  from{opacity:0;letter-spacing:.95em;transform:translateY(9px);filter:blur(4px);}
+  to{opacity:1;letter-spacing:.3em;transform:none;filter:blur(0);}
+}
+@keyframes spLine{from{transform:scaleX(0);opacity:0;}to{transform:scaleX(1);opacity:1;}}
+@keyframes spBy{from{opacity:0;transform:translateY(5px);}to{opacity:.78;transform:none;}}
+@keyframes spOut{0%{opacity:1;}100%{opacity:0;visibility:hidden;}}
+/* 主界面入场 */
+#app{animation:appIn .5s var(--ease) 2.52s both;}
+@keyframes appIn{from{opacity:0;transform:translateY(10px) scale(.996);}to{opacity:1;transform:none;}}
+/* 像素网格背景 */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.16;
+  background-image:
+    linear-gradient(var(--border) 1px,transparent 1px),
+    linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:34px 34px;
+  transition:opacity .4s var(--ease);
+}
+body>*{position:relative;z-index:1;}
+/* ================= Header ================= */
 header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:18px 28px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:16px 26px;flex-wrap:wrap;
   border-bottom:1px solid var(--border);
-  background:rgba(255,255,255,0.02);
-  flex-wrap:wrap;gap:12px;
+  background:linear-gradient(180deg,var(--accent-soft),transparent);
+  transition:border-color .4s var(--ease);
 }
 .logo{display:flex;align-items:center;gap:14px;}
 .logo-badge{
-  background:linear-gradient(135deg,var(--accent),#c7781f);
-  color:#14100a;font-weight:800;font-size:20px;
-  padding:8px 12px;border-radius:10px;letter-spacing:1px;
-  box-shadow:0 2px 14px rgba(242,163,60,0.35);
+  background:linear-gradient(135deg,var(--accent),var(--accent-dim));
+  color:var(--bg);font-weight:800;font-size:19px;letter-spacing:1px;
+  padding:8px 12px;border-radius:10px;flex:none;
+  box-shadow:0 0 20px -6px var(--glow);
+  animation:badgePulse 6s ease-in-out infinite;
 }
-.logo h1{font-size:22px;font-weight:700;letter-spacing:1px;}
-.logo p{font-size:12px;color:var(--dim);margin-top:2px;}
-.header-stats{display:flex;align-items:center;gap:14px;}
-.header-stats span{color:var(--dim);font-size:13px;}
+@keyframes badgePulse{
+  0%,100%{box-shadow:0 0 16px -8px var(--glow);}
+  50%{box-shadow:0 0 26px -4px var(--glow);}
+}
+.logo h1{font-size:21px;font-weight:700;letter-spacing:1px;}
+.logo p{font-size:11.5px;color:var(--dim);margin-top:2px;}
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.themes{display:flex;align-items:center;gap:6px;padding:5px 9px;border:1px solid var(--border);border-radius:20px;}
+.dot{
+  width:16px;height:16px;border-radius:50%;border:2px solid transparent;padding:0;flex:none;
+  transition:all .2s var(--ease);cursor:pointer;
+}
+.dot:hover{transform:scale(1.18);}
+.dot.on{border-color:var(--text);transform:scale(1.12);}
+.dot[data-theme="qingye"]{background:#3fd0c0;}
+.dot[data-theme="cs2"]{background:#f2a33c;}
+.dot[data-theme="ct"]{background:#5aa9e6;}
+.dot[data-theme="t"]{background:#e8b64c;}
+.dot[data-theme="neon"]{background:#b47aff;}
+.dot[data-theme="night"]{background:#57c07a;}
+.search{
+  width:180px;background:var(--panel);border:1px solid var(--border);color:var(--text);
+  border-radius:9px;padding:8px 12px;font-size:12.5px;font-family:inherit;outline:none;
+  transition:all .2s var(--ease);
+}
+.search:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);width:220px;}
+.search::placeholder{color:var(--dim);}
+.header-stats{display:flex;align-items:center;gap:12px;}
+.header-stats span{color:var(--dim);font-size:12.5px;}
 button{
   cursor:pointer;font-family:inherit;
   border:1px solid var(--border);background:var(--panel2);color:var(--text);
-  border-radius:8px;padding:8px 16px;font-size:13px;
-  transition:all .15s ease;
+  border-radius:9px;padding:8px 15px;font-size:12.5px;
+  transition:all .22s var(--ease);
 }
 button:hover{border-color:var(--accent);color:var(--accent);}
 button.ghost{background:transparent;}
-#langBtn{min-width:52px;font-weight:700;letter-spacing:1px;color:var(--accent);border-color:var(--accent-dim);}
-/* ===== 模板条 ===== */
-.tpl-wrap{padding:22px 28px 4px;}
-.tpl-title{
-  font-size:13px;color:var(--dim);letter-spacing:2px;
+#langBtn{min-width:50px;font-weight:700;letter-spacing:1px;color:var(--accent);border-color:var(--accent-dim);}
+/* ================= 模板 ================= */
+.tpl-wrap{padding:20px 26px 2px;}
+.sec-title{
+  font-size:12px;color:var(--dim);letter-spacing:2.5px;
   margin-bottom:12px;display:flex;align-items:center;gap:10px;
 }
-.tpl-title::after{content:'';flex:1;height:1px;background:var(--border);}
-.tpl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.sec-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:11px;}
 .tpl{
-  background:var(--panel);border:1px solid var(--border);border-radius:12px;
-  padding:16px;display:flex;gap:12px;align-items:flex-start;
-  cursor:pointer;transition:all .15s ease;position:relative;overflow:hidden;
+  background:var(--panel);border:1px solid var(--border);border-radius:11px;
+  padding:13px 14px;display:flex;gap:11px;align-items:flex-start;
+  cursor:pointer;transition:all .25s var(--ease);position:relative;overflow:hidden;
 }
 .tpl::before{
   content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
-  background:var(--accent);opacity:0;transition:opacity .15s;
+  background:var(--accent);opacity:0;transition:opacity .25s var(--ease);
 }
-.tpl:hover{transform:translateY(-2px);border-color:var(--accent);box-shadow:0 6px 20px rgba(0,0,0,0.35);}
+.tpl:hover{
+  transform:translateY(-2px);border-color:var(--accent-dim);
+  box-shadow:0 8px 24px -12px var(--glow);
+}
 .tpl:hover::before{opacity:1;}
-.tpl-icon{font-size:26px;line-height:1.2;}
-.tpl-name{font-weight:700;font-size:15px;margin-bottom:4px;}
-.tpl-desc{font-size:12px;color:var(--dim);line-height:1.5;}
-/* ===== 主布局 ===== */
+.tpl-icon{font-size:22px;line-height:1.2;flex:none;}
+.tpl-name{font-weight:700;font-size:13.5px;margin-bottom:3px;}
+.tpl-desc{font-size:11px;color:var(--dim);line-height:1.5;}
+/* ================= 主布局 ================= */
 .layout{
-  display:grid;grid-template-columns:1fr 420px;gap:20px;
-  padding:22px 28px 40px;align-items:start;
+  display:grid;grid-template-columns:1fr 430px;gap:18px;
+  padding:20px 26px 40px;align-items:start;
 }
-/* ===== 模块列表 ===== */
+/* ================= 模块 ================= */
 .mod-list{min-width:0;}
 .cat{
-  font-size:12px;color:var(--accent);letter-spacing:3px;
-  margin:20px 0 10px;font-weight:600;
+  font-size:12px;color:var(--accent);letter-spacing:3px;font-weight:600;
+  margin:18px 0 10px;display:flex;align-items:center;gap:9px;
+  cursor:pointer;user-select:none;transition:opacity .2s var(--ease);
 }
 .cat:first-child{margin-top:0;}
-.mod-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.cat:hover{opacity:.75;}
+.cat .arrow{
+  font-size:9px;transition:transform .28s var(--ease);display:inline-block;
+  color:var(--accent-dim);
+}
+.cat.collapsed .arrow{transform:rotate(-90deg);}
+.cat::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
+.mod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:11px;}
+.mod-grid.hidden{display:none;}
 .mod{
-  background:var(--panel);border:1px solid var(--border);border-radius:12px;
-  cursor:pointer;transition:all .15s ease;overflow:hidden;
+  background:var(--panel);border:1px solid var(--border);border-radius:11px;
+  cursor:pointer;transition:all .25s var(--ease);overflow:hidden;position:relative;
 }
-.mod:hover{border-color:#3a4556;}
-.mod.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 4px 16px rgba(242,163,60,0.08);}
-.mod-head{display:flex;align-items:center;gap:12px;padding:14px 16px;}
+.mod:hover{
+  transform:translateY(-2px);border-color:var(--accent-dim);
+  box-shadow:0 10px 26px -16px var(--glow);
+}
+.mod.active{
+  border-color:var(--accent);
+  animation:breathe 4.5s ease-in-out infinite;
+}
+@keyframes breathe{
+  0%,100%{box-shadow:0 0 0 1px var(--accent),0 0 12px -10px var(--glow);}
+  50%{box-shadow:0 0 0 1px var(--accent),0 0 22px -6px var(--glow);}
+}
+.mod-head{display:flex;align-items:center;gap:11px;padding:13px 15px;}
 .mod-check{
-  width:20px;height:20px;flex:none;
-  border:2px solid #3a4556;border-radius:7px;
+  width:19px;height:19px;flex:none;border:2px solid var(--border);border-radius:6px;
   display:flex;align-items:center;justify-content:center;
-  font-size:12px;color:transparent;font-weight:800;
-  transition:all .15s ease;
+  font-size:11px;color:transparent;font-weight:800;
+  transition:all .25s var(--ease);
 }
-.mod.active .mod-check{background:var(--accent);border-color:var(--accent);color:#14100a;}
-.mod-icon{font-size:20px;flex:none;}
+.mod.active .mod-check{background:var(--accent);border-color:var(--accent);color:var(--bg);}
+.mod-icon{font-size:19px;flex:none;}
 .mod-info{min-width:0;}
-.mod-name{font-size:14px;font-weight:600;margin-bottom:3px;}
-.mod-desc{font-size:11.5px;color:var(--dim);line-height:1.5;}
-.mod-params{
-  display:none;padding:0 16px 14px;
-  border-top:1px dashed var(--border);
-  margin:0 12px;padding:12px 0 14px;margin-top:0;
+.mod-name{font-size:13.5px;font-weight:600;margin-bottom:3px;}
+.mod-desc{font-size:11px;color:var(--dim);line-height:1.5;}
+.mod-tip{
+  font-size:10.5px;color:var(--accent-dim);line-height:1.5;margin-top:5px;
+  padding-left:9px;border-left:2px solid var(--accent-soft);
 }
-.mod.active .mod-params{display:block;animation:fadeIn .18s ease;}
+.mod-params{
+  display:none;border-top:1px dashed var(--border);
+  margin:0 13px;padding:11px 0 13px;
+}
+.mod.active .mod-params{display:block;animation:fadeIn .25s var(--ease);}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
 .pr{
   display:flex;align-items:center;justify-content:space-between;gap:10px;
-  font-size:12.5px;color:var(--dim);margin-top:10px;
+  font-size:12px;color:var(--dim);margin-top:9px;
 }
 .pr:first-child{margin-top:0;}
-.pr input[type=number]{
-  width:110px;background:var(--bg2);border:1px solid var(--border);color:var(--text);
-  border-radius:7px;padding:6px 10px;font-family:var(--mono);font-size:13px;
-  text-align:right;outline:none;transition:border .15s;
+.pr input[type=number],.pr input[type=text]{
+  width:104px;background:var(--bg2);border:1px solid var(--border);color:var(--text);
+  border-radius:7px;padding:6px 9px;font-family:var(--mono);font-size:12.5px;
+  outline:none;transition:all .2s var(--ease);
 }
-.pr input[type=number]:focus{border-color:var(--accent);}
-.pr input[type=text]{
-  width:110px;background:var(--bg2);border:1px solid var(--border);color:var(--text);
-  border-radius:7px;padding:6px 10px;font-family:var(--mono);font-size:13px;
-  text-align:center;outline:none;transition:border .15s;
-}
-.pr input[type=text]:focus{border-color:var(--accent);}
-.pr em{font-style:normal;flex:1;font-size:11px;color:#5b6472;line-height:1.4;}
+.pr input[type=number]{text-align:right;}
+.pr input[type=text]{text-align:center;}
+.pr input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+.pr em{font-style:normal;flex:1;font-size:10.5px;color:var(--dim);opacity:.8;line-height:1.4;}
 .pr select{
-  width:150px;background:var(--bg2);border:1px solid var(--border);color:var(--text);
-  border-radius:7px;padding:6px 8px;font-size:13px;outline:none;cursor:pointer;
+  width:146px;background:var(--bg2);border:1px solid var(--border);color:var(--text);
+  border-radius:7px;padding:6px 8px;font-size:12.5px;outline:none;cursor:pointer;
+  transition:border .2s var(--ease);
 }
 .pr select:focus{border-color:var(--accent);}
 .pr.chk{justify-content:flex-start;gap:8px;cursor:pointer;color:var(--text);}
-.pr.chk input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer;}
-/* ===== 输出面板 ===== */
+.pr.chk input{accent-color:var(--accent);width:14px;height:14px;cursor:pointer;}
+/* ================= 输出面板 ================= */
 .out-panel{
-  background:var(--panel);border:1px solid var(--border);border-radius:14px;
-  padding:18px;position:sticky;top:18px;
+  background:var(--panel);border:1px solid var(--border);border-radius:13px;
+  padding:16px;position:sticky;top:16px;
+  box-shadow:0 20px 50px -30px var(--glow);
 }
-.out-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
-.out-title{font-size:15px;font-weight:700;}
+.out-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px;}
+.out-title{font-size:14.5px;font-weight:700;white-space:nowrap;}
 .out-title span{
-  font-size:12px;color:var(--accent);background:rgba(242,163,60,0.12);
-  padding:2px 9px;border-radius:20px;margin-left:8px;font-weight:600;
+  font-size:11.5px;color:var(--accent);background:var(--accent-soft);
+  padding:2px 9px;border-radius:20px;margin-left:7px;font-weight:600;
 }
+.out-actions{display:flex;gap:7px;}
 #copyBtn{
-  background:linear-gradient(135deg,var(--accent),#c7781f);
-  border:none;color:#14100a;font-weight:700;padding:9px 18px;border-radius:9px;
-  box-shadow:0 2px 12px rgba(242,163,60,0.3);
+  background:linear-gradient(135deg,var(--accent),var(--accent-dim));
+  border:none;color:var(--bg);font-weight:700;padding:9px 16px;border-radius:9px;
+  position:relative;
 }
 #copyBtn:hover{filter:brightness(1.08);transform:translateY(-1px);}
-#copyBtn.done{background:linear-gradient(135deg,var(--green),#4f9d46);}
-.view-toggle{display:flex;gap:6px;margin-bottom:12px;}
-.view-toggle button{
-  flex:1;padding:6px 0;font-size:12px;border-radius:7px;background:transparent;color:var(--dim);
+#copyBtn:disabled{opacity:.4;cursor:not-allowed;transform:none;filter:none;}
+#copyBtn.done{background:linear-gradient(135deg,var(--green),var(--accent-dim));}
+#copyBtn.done::after{
+  content:'';position:absolute;inset:0;border-radius:9px;border:2px solid var(--green);
+  animation:pulse .7s var(--ease) forwards;pointer-events:none;
 }
-.view-toggle button.on{background:var(--panel2);color:var(--accent);border-color:var(--accent-dim);}
+@keyframes pulse{from{transform:scale(1);opacity:.9;}to{transform:scale(1.22);opacity:0;}}
+#cfgBtn{padding:9px 13px;}
 .global-opt{
-  display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim);
-  margin-bottom:12px;cursor:pointer;user-select:none;
+  display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--dim);
+  margin-bottom:10px;cursor:pointer;user-select:none;
 }
 .global-opt input{accent-color:var(--accent);width:14px;height:14px;cursor:pointer;}
-.global-opt code{font-family:var(--mono);color:var(--accent);font-size:11px;}
-#outText{
-  background:#0d1117;border:1px solid var(--border);border-radius:10px;
-  padding:14px;font-family:var(--mono);font-size:12.5px;line-height:1.7;
-  color:#a8e6a0;white-space:pre-wrap;word-break:break-all;
-  max-height:340px;overflow:auto;min-height:90px;
+.view-toggle{display:flex;gap:5px;margin-bottom:11px;}
+.view-toggle button{
+  flex:1;padding:6px 0;font-size:11.5px;border-radius:7px;background:transparent;color:var(--dim);
 }
-#outText.empty{color:var(--dim);font-family:inherit;font-size:13px;}
-.out-hint{font-size:11.5px;color:var(--dim);margin-top:10px;line-height:1.6;}
-/* ===== 速查表 ===== */
-.cheatsheet{margin-top:16px;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.view-toggle button.on{background:var(--panel2);color:var(--accent);border-color:var(--accent-dim);}
+#outText{
+  background:var(--bg);border:1px solid var(--border);border-radius:9px;
+  padding:13px;font-family:var(--mono);font-size:12px;line-height:1.75;
+  color:var(--green);white-space:pre-wrap;word-break:break-all;
+  max-height:330px;overflow:auto;min-height:88px;
+  transition:border-color .3s var(--ease);
+}
+#outText.empty{color:var(--dim);font-family:inherit;font-size:12.5px;}
+#outText .grp{color:var(--accent);font-weight:700;}
+.out-hint{font-size:11px;color:var(--dim);margin-top:9px;line-height:1.6;}
+/* ================= 速查表 ================= */
+.cheatsheet{margin-top:14px;border:1px solid var(--border);border-radius:9px;overflow:hidden;}
 .cheatsheet summary{
-  padding:11px 14px;font-size:13px;cursor:pointer;color:var(--dim);
-  user-select:none;background:var(--panel2);
+  padding:10px 13px;font-size:12.5px;cursor:pointer;color:var(--dim);
+  user-select:none;background:var(--panel2);transition:color .2s var(--ease);
 }
 .cheatsheet summary:hover{color:var(--accent);}
-.cheatsheet table{width:100%;border-collapse:collapse;font-size:11.5px;}
-.cheatsheet td{padding:7px 12px;border-top:1px solid var(--border);vertical-align:top;}
+.cheatsheet table{width:100%;border-collapse:collapse;font-size:11px;}
+.cheatsheet td{padding:6px 11px;border-top:1px solid var(--border);vertical-align:top;}
 .cheatsheet td:first-child{
-  font-family:var(--mono);color:var(--accent);white-space:nowrap;
-  width:42%;
+  font-family:var(--mono);color:var(--accent);white-space:nowrap;width:40%;
 }
 .cheatsheet td:last-child{color:var(--dim);line-height:1.5;}
-/* ===== 页脚 ===== */
+/* ================= 页脚 ================= */
 footer{
-  padding:18px 28px 30px;font-size:11.5px;color:#5b6472;
+  padding:16px 26px 28px;font-size:11px;color:var(--dim);opacity:.75;
   border-top:1px solid var(--border);line-height:1.8;
 }
 footer b{color:var(--accent);}
-/* ===== 响应式 ===== */
+/* ================= 响应式 ================= */
 @media (max-width:1080px){
   .layout{grid-template-columns:1fr;}
   .out-panel{position:static;}
 }
 @media (max-width:720px){
-  .tpl-grid{grid-template-columns:1fr;}
   .mod-grid{grid-template-columns:1fr;}
-  header{padding:14px 16px;}
-  .tpl-wrap,.layout{padding-left:16px;padding-right:16px;}
+  header{padding:13px 15px;}
+  .tpl-wrap,.layout{padding-left:15px;padding-right:15px;}
+  .search{width:130px;}
+  .search:focus{width:150px;}
 }
 </style>
 </head>
 <body>
 
+<div id="splash">
+  <div class="sp-icon"><img src="data:image/png;base64,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" alt=""></div>
+  <div class="sp-title" data-i18n="appName">CS2 指令生成器</div>
+  <div class="sp-line"></div>
+  <div class="sp-by" data-i18n="madeBy">Escape_0i 制作</div>
+</div>
+
+<div id="app">
 <header>
   <div class="logo">
     <span class="logo-badge">CS2</span>
     <div>
       <h1 data-i18n="h1">指令生成器</h1>
-      <p data-i18n="subtitle">自建练习房 · 人机对战 · 一键生成控制台指令</p>
     </div>
   </div>
-  <div class="header-stats">
+  <div class="toolbar">
+    <div class="themes" id="themes" title="配色 / Theme"></div>
+    <input id="searchBox" class="search" type="text" data-i18n-ph="searchPh" placeholder="搜索模块…">
     <button id="langBtn" title="Switch language / 切换语言">EN</button>
+  </div>
+  <div class="header-stats">
     <span id="selCount">已选 0 个模块</span>
     <button id="clearAll" class="ghost" data-i18n="clearAll">清空选择</button>
   </div>
 </header>
 
 <section class="tpl-wrap">
-  <div class="tpl-title" data-i18n="tplTitle">快速模板 · 一键载入</div>
+  <div class="sec-title" data-i18n="tplTitle">快速模板 · 一键载入</div>
   <div class="tpl-grid" id="tplGrid"></div>
 </section>
 
@@ -238,55 +420,65 @@ footer b{color:var(--accent);}
   <aside class="out-panel">
     <div class="out-head">
       <div class="out-title"><span data-i18n="outTitle">生成指令</span><span id="cmdCount"> 0 条</span></div>
-      <button id="copyBtn" data-i18n="copyBtn">📋 复制指令</button>
+      <div class="out-actions">
+        <button id="copyBtn" data-i18n="copyBtn">📋 复制</button>
+        <button id="cfgBtn" data-i18n="cfgBtn" title="下载 .cfg 文件">⬇ .cfg</button>
+      </div>
     </div>
-    <label class="global-opt"><input type="checkbox" id="autoWarmup" checked><span data-i18n="autoWarmup">默认附加：热身时长归零</span></label>
+    <label class="global-opt"><input type="checkbox" id="autoWarmup" checked><span data-i18n="autoWarmup">默认附加：热身时长归零（mp_warmuptime 0）</span></label>
     <div class="view-toggle" id="viewToggle">
       <button data-view="compact" class="on" data-i18n="viewCompact">一行紧凑</button>
-      <button data-view="lines" data-i18n="viewLines">分行预览</button>
+      <button data-view="lines" data-i18n="viewLines">逐条分行</button>
+      <button data-view="grouped" data-i18n="viewGrouped">按模块分组</button>
     </div>
     <pre id="outText" class="empty" data-i18n="outEmpty">在左侧勾选模块、设置参数，这里会自动生成可以整段粘贴到游戏控制台的指令。</pre>
     <div class="out-hint" id="outHint"></div>
 
     <details class="cheatsheet">
       <summary data-i18n="refTitle">📖 指令速查表（点击展开）</summary>
-      <table>
-        <tr><td>sv_cheats 1</td><td data-i18n="ref1">开启作弊模式（练习房必需，进房后第一个执行）</td></tr>
-        <tr><td>mp_limitteams 0</td><td data-i18n="ref2">允许队伍人数不平衡（1v5 必需）</td></tr>
-        <tr><td>mp_autoteambalance false</td><td data-i18n="ref3">关闭自动平衡队伍</td></tr>
-        <tr><td>mp_freezetime 0 / 3</td><td data-i18n="ref4">冻结时间，0 秒即开局就能动</td></tr>
-        <tr><td>bot_difficulty 1~5</td><td data-i18n="ref5">人机难度，5 为最难</td></tr>
-        <tr><td>bot_add_t / bot_add_ct</td><td data-i18n="ref6">添加人机到 T 队 / CT 队</td></tr>
-        <tr><td>bot_kick</td><td data-i18n="ref7">清除所有现有人机</td></tr>
-        <tr><td>bot_stop 1</td><td data-i18n="ref8">人机站桩不动，当活靶子练枪</td></tr>
-        <tr><td>mp_restartgame 1</td><td data-i18n="ref9">重启当前回合，让指令生效</td></tr>
-        <tr><td>mp_warmup_end</td><td data-i18n="refWarmup">结束练习模式默认的无限训练（热身）时间，直接进入正式回合</td></tr>
-        <tr><td>buddha 1 / 0</td><td data-i18n="ref10">开启 / 关闭锁血（血打不完）</td></tr>
-        <tr><td>buddha_reset_hp 1000</td><td data-i18n="ref11">改血量核心指令：锁血状态下把血量刷到设定值</td></tr>
-        <tr><td>give weapon_xxx</td><td data-i18n="ref12">直接获得指定武器（枪械/道具；CS2 的刀不能 give，需用 subclass）</td></tr>
-        <tr><td>sv_infinite_ammo 1</td><td data-i18n="ref13">无限弹药；2 = 无限且无需换弹</td></tr>
-        <tr><td>weapon_recoil_scale 0</td><td data-i18n="ref14">消除后坐力，弹道笔直</td></tr>
-        <tr><td>sv_showimpacts 1</td><td data-i18n="ref15">显示弹着点（练预瞄定位）</td></tr>
-        <tr><td>sv_grenade_trajectory 1</td><td data-i18n="ref16">显示投掷物飞行轨迹</td></tr>
-        <tr><td>host_timescale 0.2</td><td data-i18n="ref17">慢动作回放；1 恢复正常速度</td></tr>
-        <tr><td>sv_gravity 0</td><td data-i18n="ref18">无重力；800 为正常重力</td></tr>
-        <tr><td>sv_jump_impulse 1000</td><td data-i18n="ref19">跳跃力度，默认约 301</td></tr>
-        <tr><td>mp_drop_knife_enable true</td><td data-i18n="ref20">允许丢弃/展示刀（蝴蝶刀需要）</td></tr>
-        <tr><td>subclass_create 515</td><td data-i18n="ref21">CS2 出刀专用：生成蝴蝶刀实体在地上（515=蝴蝶刀，507=爪子刀，508=M9，514=弯刀，525=骷髅刀），走过去拾取</td></tr>
-        <tr><td>bind p "subclass_create 515"</td><td data-i18n="ref22">把出刀指令绑定到 P 键；多人房中发给好友、在自己控制台粘贴同样有效（房主需先开 sv_cheats）</td></tr>
-        <tr><td>unbind p</td><td data-i18n="ref23">解除 P 键的绑定</td></tr>
-        <tr><td>thirdperson / firstperson</td><td data-i18n="ref24">第三人称视角 / 恢复第一人称</td></tr>
-      </table>
+      <table id="refTable"></table>
     </details>
   </aside>
 </main>
 
 <footer>
-  <p data-i18n="footer1" data-i18n-html><b>使用方法：</b>设置 → 游戏 → 启用开发者控制台（~）；在自建练习房内按 ~ 打开控制台，将生成的指令整段粘贴（Ctrl + V）回车即可。</p>
+  <p data-i18n="footer1" data-i18n-html><b>使用方法：</b>设置 → 游戏 → 启用开发者控制台（~）；在练习房或自建服务器内按 ~ 打开控制台，将生成的指令整段粘贴（Ctrl + V）回车即可。</p>
   <p data-i18n="footer2" data-i18n-html><b>注意：</b>sv_cheats 相关指令仅在自建服务器、单人模式或练习房生效，官方匹配与竞技模式中无效；buddha、subclass_create 等指令可能受模式限制。</p>
 </footer>
+</div>
 
 <script>
+/* ================= 主题 ================= */
+const THEMES = [
+  {id:'qingye', zh:'青夜', en:'Night Cyan'},
+  {id:'cs2',    zh:'CS2 橙', en:'CS2 Orange'},
+  {id:'ct',     zh:'CT 蓝', en:'CT Blue'},
+  {id:'t',      zh:'T 琥珀', en:'T Amber'},
+  {id:'neon',   zh:'霓虹紫', en:'Neon Purple'},
+  {id:'night',  zh:'夜绿', en:'Night Green'},
+];
+let theme = 'qingye';
+try{ theme = localStorage.getItem('cs2gen_theme') || 'qingye'; }catch(e){}
+
+function applyTheme(id, animate){
+  if(animate){
+    document.body.classList.add('theme-anim');
+    setTimeout(()=>document.body.classList.remove('theme-anim'), 620);
+  }
+  theme = id;
+  document.documentElement.setAttribute('data-theme', id);
+  document.querySelectorAll('.dot').forEach(d=>d.classList.toggle('on', d.dataset.theme===id));
+  try{ localStorage.setItem('cs2gen_theme', id); }catch(e){}
+}
+
+function renderThemes(){
+  const box = document.getElementById('themes');
+  box.innerHTML = THEMES.map(t =>
+    '<button class="dot" data-theme="'+t.id+'" title="'+T(t.zh,t.en)+'"></button>'
+  ).join('');
+  document.querySelectorAll('.dot').forEach(d=>d.classList.toggle('on', d.dataset.theme===theme));
+}
+
 /* ================= 语言 ================= */
 let lang = 'zh';
 try{ lang = localStorage.getItem('cs2gen_lang') || 'zh'; }catch(e){}
@@ -301,373 +493,692 @@ const T = (zh, en) => lang==='en' ? en : zh;
 
 const I18N = {
   h1:          {zh:'指令生成器', en:'Command Generator'},
-  subtitle:    {zh:'自建练习房 · 人机对战 · 一键生成控制台指令', en:'Practice lobbies · Bot matches · One-click console commands'},
+  appName:     {zh:'CS2 指令生成器', en:'CS2 Command Generator'},
+  madeBy:      {zh:'Escape_0i 制作', en:'by Escape_0i'},
+  searchPh:    {zh:'搜索模块…', en:'Search modules…'},
   clearAll:    {zh:'清空选择', en:'Clear All'},
   tplTitle:    {zh:'快速模板 · 一键载入', en:'Quick Templates · One-click Load'},
   outTitle:    {zh:'生成指令', en:'Commands'},
-  copyBtn:     {zh:'📋 复制指令', en:'📋 Copy'},
+  copyBtn:     {zh:'📋 复制', en:'📋 Copy'},
+  cfgBtn:      {zh:'⬇ .cfg', en:'⬇ .cfg'},
   copied:      {zh:'✓ 已复制', en:'✓ Copied'},
   viewCompact: {zh:'一行紧凑', en:'One-line'},
-  viewLines:   {zh:'分行预览', en:'Multi-line'},
+  viewLines:   {zh:'逐条分行', en:'Multi-line'},
+  viewGrouped: {zh:'按模块分组', en:'By Module'},
   autoWarmup:  {zh:'默认附加：热身时长归零（mp_warmuptime 0）', en:'Always prepend: warmup time 0 (mp_warmuptime 0)'},
   outEmpty:    {zh:'在左侧勾选模块、设置参数，这里会自动生成可以整段粘贴到游戏控制台的指令。', en:'Check modules and set parameters on the left. Generated commands appear here, ready to paste into the game console.'},
   outEmpty2:   {zh:'还没有生成指令，先在左侧勾选模块吧。', en:'No commands yet. Select some modules on the left.'},
   selCount:    {zh:'已选 {n} 个模块', en:'{n} modules selected'},
   cmdCount:    {zh:' {n} 条', en:' {n} cmds'},
-  outHint:     {zh:'{n} 条指令 · {c} 字符 · 分号分隔，可直接整段粘贴进游戏控制台', en:'{n} commands · {c} chars · semicolon-separated, paste into game console'},
+  outHint:     {zh:'{n} 条指令 · {c} 字符 · {d} 条被去重 · 分号分隔，可直接整段粘贴', en:'{n} commands · {c} chars · {d} deduped · semicolon-separated, paste directly'},
   refTitle:    {zh:'📖 指令速查表（点击展开）', en:'📖 Command Reference (click to expand)'},
-  footer1:     {zh:'<b>使用方法：</b>设置 → 游戏 → 启用开发者控制台（~）；在自建练习房内按 ~ 打开控制台，将生成的指令整段粘贴（Ctrl + V）回车即可。', en:'<b>Usage:</b> Settings → Game → Enable Developer Console (~); open the console in a custom lobby and paste the commands (Ctrl + V).'},
-  footer2:     {zh:'<b>注意：</b>sv_cheats 相关指令仅在自建服务器、单人模式或练习房生效，官方匹配与竞技模式中无效；buddha、subclass_create 等指令可能受模式限制。', en:'<b>Note:</b> sv_cheats commands only work on custom servers, offline or practice lobbies — never in official matchmaking. Some commands (buddha, subclass_create) may be limited by the game mode.'},
-  ref1:  {zh:'开启作弊模式（练习房必需，进房后第一个执行）', en:'Enable cheat mode (required in practice rooms, run first)'},
-  ref2:  {zh:'允许队伍人数不平衡（1v5 必需）', en:'Allow unbalanced teams (needed for 1v5)'},
-  ref3:  {zh:'关闭自动平衡队伍', en:'Disable auto team balance'},
-  ref4:  {zh:'冻结时间，0 秒即开局就能动', en:'Freeze time in seconds; 0 = move instantly at round start'},
-  ref5:  {zh:'人机难度，5 为最难', en:'Bot difficulty, 5 = hardest'},
-  ref6:  {zh:'添加人机到 T 队 / CT 队', en:'Add a bot to T / CT team'},
-  ref7:  {zh:'清除所有现有人机', en:'Kick all existing bots'},
-  ref8:  {zh:'人机站桩不动，当活靶子练枪', en:'Bots stand still — target practice'},
-  ref9:  {zh:'重启当前回合，让指令生效', en:'Restart the round to apply changes'},
-  refWarmup: {zh:'结束练习模式默认的无限训练（热身）时间，直接进入正式回合', en:'End the unlimited training/warmup in practice mode and start the real round'},
-  ref10: {zh:'开启 / 关闭锁血（血打不完）', en:'Enable / disable HP lock (cannot die)'},
-  ref11: {zh:'改血量核心指令：锁血状态下把血量刷到设定值', en:'Core HP command: refresh HP to the value while locked'},
-  ref12: {zh:'直接获得指定武器（枪械/道具；CS2 的刀不能 give，需用 subclass）', en:'Give any weapon (guns & items; knives need subclass in CS2)'},
-  ref13: {zh:'无限弹药；2 = 无限且无需换弹', en:'Infinite ammo; 2 = infinite without reloading'},
-  ref14: {zh:'消除后坐力，弹道笔直', en:'Zero recoil, straight bullets'},
-  ref15: {zh:'显示弹着点（练预瞄定位）', en:'Show bullet impacts (aim practice)'},
-  ref16: {zh:'显示投掷物飞行轨迹', en:'Show grenade flight trajectories'},
-  ref17: {zh:'慢动作回放；1 恢复正常速度', en:'Slow motion replay; 1 = normal speed'},
-  ref18: {zh:'无重力；800 为正常重力', en:'Zero gravity; 800 = normal'},
-  ref19: {zh:'跳跃力度，默认约 301', en:'Jump impulse, default ~301'},
-  ref20: {zh:'允许丢弃/展示刀（蝴蝶刀需要）', en:'Allow dropping / showing knives (butterfly needs it)'},
-  ref21: {zh:'CS2 出刀专用：生成蝴蝶刀实体在地上（515=蝴蝶刀，507=爪子刀，508=M9，514=弯刀，525=骷髅刀），走过去拾取', en:'CS2 knife command: spawn butterfly on the ground (515=butterfly, 507=karambit, 508=M9, 514=bowie, 525=skeleton), walk over to pick up'},
-  ref22: {zh:'把出刀指令绑定到 P 键；多人房中发给好友、在自己控制台粘贴同样有效（房主需先开 sv_cheats）', en:'Bind knife spawn to P; in multiplayer, friends can paste the same line in their own console (host must enable sv_cheats first)'},
-  ref23: {zh:'解除 P 键的绑定', en:'Remove the P key binding'},
-  ref24: {zh:'第三人称视角 / 恢复第一人称', en:'Third-person view / back to first person'},
+  footer1:     {zh:'<b>使用方法：</b>设置 → 游戏 → 启用开发者控制台（~）；在练习房或自建服务器内按 ~ 打开控制台，将生成的指令整段粘贴（Ctrl + V）回车即可；复制快捷键 Ctrl + E。', en:'<b>Usage:</b> Settings → Game → Enable Developer Console (~); open the console in a practice lobby or custom server and paste the commands (Ctrl + V). Copy shortcut: Ctrl + E.'},
+  footer2:     {zh:'<b>注意：</b>sv_cheats 相关指令仅在自建服务器、单人模式或练习房生效，官方匹配与竞技模式中无效；<b>服务器变量</b>（mp_ / sv_ / bot_ 开头）由房主执行且对全房间生效，<b>客户端命令</b>（cl_ / god / noclip 等）只影响你自己。', en:'<b>Note:</b> sv_cheats commands work only on custom servers, offline or practice lobbies. <b>Server vars</b> (mp_ / sv_ / bot_) are run by the host and affect the whole lobby; <b>client commands</b> (cl_ / god / noclip) only affect you.'},
+  noCmd:       {zh:'无指令', en:'No commands'},
 };
+
+/* ================= 速查表 ================= */
+const REFS = [
+  ['sv_cheats 1',        {zh:'开启作弊模式（练习房必需，第一个执行）', en:'Enable cheat mode (required first in practice rooms)'}],
+  ['mp_warmup_end',      {zh:'结束练习模式的无限训练时间，直接开始正式回合', en:'End the unlimited practice warmup and start the real round'}],
+  ['mp_limitteams 0',    {zh:'允许队伍人数不平衡（1v5 必需）', en:'Allow unbalanced teams (needed for 1v5)'}],
+  ['mp_autoteambalance false', {zh:'关闭自动平衡队伍', en:'Disable auto team balance'}],
+  ['mp_freezetime 0',    {zh:'冻结时间，0 即开局就能动', en:'Freeze time in seconds; 0 = move instantly'}],
+  ['mp_roundtime 60',    {zh:'回合时长（分钟），上限 60', en:'Round time in minutes, max 60'}],
+  ['bot_difficulty 5',   {zh:'人机难度，1-5，5 最难', en:'Bot difficulty 1-5, 5 = hardest'}],
+  ['bot_add_t / bot_add_ct', {zh:'添加人机到 T / CT 队', en:'Add a bot to T / CT team'}],
+  ['bot_kick',           {zh:'清除所有人机', en:'Kick all bots'}],
+  ['bot_stop 1',         {zh:'人机站桩不动，当活靶子', en:'Bots stand still — target practice'}],
+  ['bot_place',          {zh:'在你准星瞄准的位置生成一个人机（练预瞄）', en:'Spawn a bot where you aim (aim practice)'}],
+  ['bot_mimic 1',        {zh:'人机模仿你的移动和动作', en:'Bots mimic your movement'}],
+  ['bot_quota 5',        {zh:'维持场上人机数量', en:'Keep a fixed number of bots'}],
+  ['mp_respawn_on_death_ct 1', {zh:'CT 死亡后立即复活', en:'CT instantly respawn on death'}],
+  ['mp_ignore_round_win_conditions 1', {zh:'拆包/团灭不结束回合（练拆包）', en:'Ignore round win conditions (defuse practice)'}],
+  ['mp_c4timer 40',      {zh:'C4 爆炸倒计时（秒）', en:'C4 fuse time in seconds'}],
+  ['ent_fire !self addoutput "health 1000"', {zh:'把自己血量设为 1000（不影响人机）', en:'Set your own HP to 1000 (bots unaffected)'}],
+  ['ent_fire !picker addoutput "health 1000"', {zh:'把准星瞄准的人机血量设为 1000', en:'Set HP of the bot you are aiming at'}],
+  ['buddha 1 / 0',       {zh:'锁血：血量归零自动回满，只作用于自己', en:'HP lock: refill on death, client-side only'}],
+  ['god',                {zh:'无敌（客户端，只影响自己）', en:'Invincibility (client-side, you only)'}],
+  ['noclip',             {zh:'穿墙飞行', en:'Fly through walls'}],
+  ['give weapon_xxx',    {zh:'获得武器（枪械/道具；CS2 的刀不能用 give）', en:'Give a weapon (guns/items; knives need subclass)'}],
+  ['subclass_create 515', {zh:'CS2 出刀：在脚下生成刀（515=蝴蝶刀 507=爪子刀 508=M9 514=Bowie 525=骷髅刀），走过去捡', en:'CS2 knife: spawn on ground (515=butterfly 507=karambit 508=M9 514=bowie 525=skeleton), walk over to pick up'}],
+  ['sv_infinite_ammo 1',  {zh:'无限弹药；2 = 无限且无需换弹', en:'Infinite ammo; 2 = no reload'}],
+  ['weapon_recoil_scale 0', {zh:'消除后坐力，弹道笔直', en:'Zero recoil'}],
+  ['sv_showimpacts 1',   {zh:'显示弹着点（练预瞄定位）', en:'Show bullet impacts'}],
+  ['sv_grenade_trajectory 1', {zh:'显示投掷物飞行轨迹', en:'Show grenade trajectories'}],
+  ['sv_rethrow_last_grenade', {zh:'重投上一次的投掷物（烟、闪、火、雷通用）', en:'Rethrow your last utility (smoke/flash/molotov/HE)'}],
+  ['ent_fire smokegrenade_projectile kill', {zh:'清除地图上所有投掷物（可绑键）', en:'Clear all utility on the map (bindable)'}],
+  ['sv_enablebunnyhopping 1', {zh:'连跳辅助（配合自动连跳）', en:'Bunnyhop support (pair with auto bhop)'}],
+  ['sv_maxspeed 320',    {zh:'玩家最大移动速度', en:'Max player speed'}],
+  ['sv_gravity 800',     {zh:'重力，800 为正常，0 为无重力', en:'Gravity; 800 normal, 0 zero-g'}],
+  ['host_timescale 0.2', {zh:'慢动作；1 恢复正常', en:'Slow motion; 1 = normal'}],
+  ['r_cleardecals',      {zh:'清除地图上的血迹与弹痕', en:'Clear blood & bullet decals'}],
+  ['cl_showpos 1',       {zh:'显示坐标与速度（练跳点）', en:'Show position & speed'}],
+  ['thirdperson / firstperson', {zh:'第三人称 / 恢复第一人称', en:'Third person / back to first person'}],
+];
 
 /* ================= 模块定义 ================= */
 const MODULES = [
-  /* ---------- 人机对局 ---------- */
-  {
-    id:'bot', cat:'人机对局', enCat:'Bots', icon:'🤖', name:'人机对战配置', enName:'Bot Match Setup',
-    desc:'设置我方阵营、人机数量与难度（含 5v5 / 1v5 场景）',
-    enDesc:'Set your team, bot count and difficulty (5v5 / 1v5)',
-    params:[
-      {key:'side',    label:'我方阵营',     enLabel:'Your Team',   type:'select', def:'CT',
-       options:[{v:'CT',t:'CT 反恐精英',en:'CT (Counter-Terrorist)'},{v:'T',t:'T 恐怖分子',en:'T (Terrorist)'}]},
-      {key:'enemy',   label:'敌方人机数量', enLabel:'Enemy Bots',   type:'number', min:0, max:10, def:5},
-      {key:'ally',    label:'队友人机数量', enLabel:'Ally Bots',    type:'number', min:0, max:10, def:4},
-      {key:'diff',    label:'人机难度',     enLabel:'Bot Difficulty', type:'select', def:5, options:[1,2,3,4,5]},
-      {key:'freeze',  label:'冻结时间（秒）', enLabel:'Freeze Time (s)', type:'number', min:0, max:60, def:3},
-    ],
-    build(p){
-      const c=[
-        'sv_cheats 1','mp_limitteams 0','mp_autoteambalance false',
-        'mp_freezetime '+p.freeze,
-        'sv_auto_adjust_bot_difficulty false',
-        'mp_coopmission_bot_difficulty_offset '+p.diff,
-        'bot_difficulty '+p.diff,
-        'custom_bot_difficulty '+p.diff,
-        'bot_kick'
-      ];
-      const enemySide = p.side==='CT' ? 't' : 'ct';
-      const allySide  = p.side==='CT' ? 'ct' : 't';
-      for(let i=0;i<p.enemy;i++) c.push('bot_add_'+enemySide);
-      for(let i=0;i<p.ally; i++) c.push('bot_add_'+allySide);
-      c.push('mp_restartgame 1');
-      return c;
+/* ========== 人机对局 ========== */
+{
+  id:'bot', cat:'人机对局', enCat:'Bots', icon:'🤖', name:'人机对战配置', enName:'Bot Match Setup',
+  desc:'设置我方阵营、人机数量与难度，搭 5v5 或 1v5 场景',
+  enDesc:'Set your team, bot count and difficulty for 5v5 or 1v5 setups',
+  params:[
+    {key:'side',   label:'我方阵营',     enLabel:'Your Team',       type:'select', def:'CT',
+     options:[{v:'CT',t:'CT 反恐精英',en:'CT (Counter-Terrorist)'},{v:'T',t:'T 恐怖分子',en:'T (Terrorist)'}]},
+    {key:'enemy',  label:'敌方人机数量', enLabel:'Enemy Bots',       type:'number', min:0, max:10, def:5},
+    {key:'ally',   label:'队友人机数量', enLabel:'Ally Bots',        type:'number', min:0, max:10, def:4},
+    {key:'diff',   label:'人机难度',     enLabel:'Bot Difficulty',   type:'select', def:5, options:[1,2,3,4,5]},
+    {key:'freeze', label:'冻结时间（秒）', enLabel:'Freeze Time (s)',  type:'number', min:0, max:60, def:3},
+  ],
+  build(p){
+    const c=['sv_cheats 1','mp_limitteams 0','mp_autoteambalance false',
+      'mp_freezetime '+p.freeze,'sv_auto_adjust_bot_difficulty false',
+      'bot_difficulty '+p.diff,'bot_kick'];
+    const e = p.side==='CT' ? 't' : 'ct';
+    const a = p.side==='CT' ? 'ct' : 't';
+    for(let i=0;i<p.enemy;i++) c.push('bot_add_'+e);
+    for(let i=0;i<p.ally;i++)  c.push('bot_add_'+a);
+    c.push('mp_restartgame 1');
+    return c;
+  }
+},
+{
+  id:'botbehave', cat:'人机对局', enCat:'Bots', icon:'🎯', name:'人机行为设置', enName:'Bot Behavior',
+  desc:'让人机站桩当靶子、蹲下，或限制他们的武器',
+  enDesc:'Freeze bots as targets, make them crouch, or limit their weapons',
+  params:[
+    {key:'stop',   label:'站桩不动', enLabel:'Stand Still', type:'select', def:1,
+     options:[{v:1,t:'站桩',en:'Stand still'},{v:0,t:'正常移动',en:'Move'}]},
+    {key:'crouch', label:'全部蹲下', enLabel:'All Crouch', type:'checkbox', def:false},
+    {key:'weapon', label:'武器限制', enLabel:'Weapon Limit', type:'select', def:'none',
+     options:[{v:'none',t:'不限',en:'Any'},{v:'knife',t:'只用刀',en:'Knife only'},{v:'pistol',t:'只用手枪',en:'Pistol only'}]},
+  ],
+  build(p){
+    const c=['sv_cheats 1','bot_stop '+p.stop];
+    if(p.crouch) c.push('bot_crouch 1');
+    if(p.weapon==='knife')  c.push('bot_knives_only 1');
+    if(p.weapon==='pistol') c.push('bot_pistols_only 1');
+    return c;
+  }
+},
+{
+  id:'botplace', cat:'人机对局', enCat:'Bots', icon:'📍', name:'人机定位放置', enName:'Place Bot',
+  desc:'在准星瞄准的位置生成人机，用于练预瞄和爆头线',
+  enDesc:'Spawn a bot exactly where you aim — great for pre-aim practice',
+  tip:'执行前把准星对准想要的位置，然后运行指令',
+  enTip:'Aim at the spot first, then run the command',
+  params:[
+    {key:'freeze', label:'放置后静止', enLabel:'Freeze After', type:'checkbox', def:true},
+  ],
+  build(p){
+    const c=['sv_cheats 1','bot_place'];
+    if(p.freeze) c.push('bot_stop 1');
+    return c;
+  }
+},
+{
+  id:'botmimic', cat:'人机对局', enCat:'Bots', icon:'🪞', name:'人机模仿动作', enName:'Bot Mimic',
+  desc:'人机复制你的移动、跳跃和开枪，用来练对枪反应',
+  enDesc:'Bots copy your movement, jumps and shooting',
+  params:[
+    {key:'on', label:'开启模仿', enLabel:'Enable', type:'select', def:1,
+     options:[{v:1,t:'开启',en:'On'},{v:0,t:'关闭',en:'Off'}]},
+  ],
+  build(p){ return ['sv_cheats 1','bot_mimic '+p.on]; }
+},
+{
+  id:'botquota', cat:'人机对局', enCat:'Bots', icon:'🔢', name:'人机数量托管', enName:'Bot Quota',
+  desc:'让服务器自动维持指定数量的人机，掉线自动补位',
+  enDesc:'Server keeps a fixed number of bots, auto-refilling',
+  params:[
+    {key:'n',    label:'维持数量', enLabel:'Quota', type:'number', min:0, max:10, def:5},
+    {key:'mode', label:'托管模式', enLabel:'Mode', type:'select', def:'normal',
+     options:[{v:'normal',t:'固定数量',en:'Fixed count'},{v:'fill',t:'补满',en:'Fill'},{v:'match',t:'按比例',en:'Match ratio'}]},
+  ],
+  build(p){ return ['sv_cheats 1','bot_quota '+p.n,'bot_quota_mode '+p.mode]; }
+},
+{
+  id:'kick', cat:'人机对局', enCat:'Bots', icon:'🧹', name:'清除人机', enName:'Kick Bots',
+  desc:'踢出场上所有人机并重启回合', enDesc:'Kick all bots and restart the round',
+  build(){ return ['sv_cheats 1','bot_kick','mp_restartgame 1']; }
+},
+/* ========== 对局规则 ========== */
+{
+  id:'round', cat:'对局规则', enCat:'Match Rules', icon:'⏱️', name:'回合与时间配置', enName:'Round & Time',
+  desc:'冻结时间、回合时长、回合数上限',
+  enDesc:'Freeze time, round length and round limits',
+  params:[
+    {key:'freeze',   label:'冻结时间（秒）', enLabel:'Freeze Time (s)',  type:'number', min:0, max:60, def:0},
+    {key:'time',     label:'回合时长（分钟）', enLabel:'Round Length (min)', type:'number', min:1, max:60, def:60},
+    {key:'maxrounds',label:'最大回合数',     enLabel:'Max Rounds',       type:'number', min:1, max:30, def:30},
+    {key:'restart',  label:'立即重启回合',    enLabel:'Restart round now', type:'checkbox', def:true},
+  ],
+  build(p){
+    const c=['sv_cheats 1','mp_freezetime '+p.freeze,
+      'mp_roundtime '+p.time,'mp_roundtime_defuse '+p.time,'mp_roundtime_hostage '+p.time,
+      'mp_maxrounds '+p.maxrounds,'mp_timelimit 0'];
+    if(p.restart) c.push('mp_restartgame 1');
+    return c;
+  }
+},
+{
+  id:'endwarmup', cat:'对局规则', enCat:'Match Rules', icon:'⏭️', name:'结束训练时间', enName:'End Training Time',
+  desc:'练习模式默认停在无限训练阶段，执行后立即进入正式回合',
+  enDesc:'Practice mode starts in unlimited warmup; this jumps into the real round',
+  tip:'执行后直接开打，不再无限热身',
+  enTip:'Jumps straight into the match',
+  build(){ return ['mp_warmup_pausetimer 0','mp_warmup_end']; }
+},
+{
+  id:'respawn', cat:'对局规则', enCat:'Match Rules', icon:'♻️', name:'死亡立即复活', enName:'Instant Respawn',
+  desc:'阵亡后立刻复活，保持连续训练节奏',
+  enDesc:'Respawn right after dying to keep training flow',
+  params:[
+    {key:'ct', label:'CT 立即复活', enLabel:'CT respawn', type:'checkbox', def:true},
+    {key:'t',  label:'T 立即复活',  enLabel:'T respawn',  type:'checkbox', def:true},
+  ],
+  build(p){
+    const c=['sv_cheats 1'];
+    if(p.ct) c.push('mp_respawn_on_death_ct 1');
+    if(p.t)  c.push('mp_respawn_on_death_t 1');
+    return c;
+  }
+},
+{
+  id:'bombrules', cat:'对局规则', enCat:'Match Rules', icon:'💣', name:'炸弹与回合条件', enName:'Bomb & Win Conditions',
+  desc:'调整 C4 引信时间，或让拆包练习不结束回合',
+  enDesc:'Tune the C4 fuse or keep the round running while you defuse',
+  params:[
+    {key:'c4',     label:'C4 引信（秒）', enLabel:'C4 Fuse (s)', type:'number', min:5, max:120, def:40},
+    {key:'setc4',  label:'应用引信时间',  enLabel:'Apply fuse',  type:'checkbox', def:true},
+    {key:'ignore', label:'不结束回合',    enLabel:'Ignore win conditions', type:'checkbox', def:true},
+  ],
+  build(p){
+    const c=['sv_cheats 1'];
+    if(p.setc4) c.push('mp_c4timer '+p.c4);
+    if(p.ignore) c.push('mp_ignore_round_win_conditions 1');
+    return c;
+  }
+},
+{
+  id:'buy', cat:'对局规则', enCat:'Match Rules', icon:'💰', name:'购买与金钱配置', enName:'Buy & Money',
+  desc:'任意地点购买、超长购买时间、满钱',
+  enDesc:'Buy anywhere, long buy time, full money',
+  params:[
+    {key:'anywhere',label:'任意地点购买', enLabel:'Buy Anywhere',     type:'checkbox', def:true},
+    {key:'buytime', label:'购买时间（秒）', enLabel:'Buy Time (s)',      type:'number', min:1, max:99999, def:9999},
+    {key:'money',   label:'初始/最高金钱',  enLabel:'Start / Max Money',  type:'number', min:0, max:16000, def:16000},
+  ],
+  build(p){
+    const c=['sv_cheats 1','mp_maxmoney '+p.money,'mp_startmoney '+p.money];
+    if(p.anywhere) c.push('mp_buy_anywhere 1');
+    c.push('mp_buytime '+p.buytime);
+    return c;
+  }
+},
+/* ========== 玩家增强 ========== */
+{
+  id:'hp', cat:'玩家增强', enCat:'Player Boost', icon:'❤️', name:'设置血量', enName:'Set Health',
+  desc:'精确指定改谁的血量：自己、准星瞄准的人机、或全体',
+  enDesc:'Precisely target who gets the HP: yourself, the bot you aim at, or everyone',
+  tip:'固定血量用实体指令精准指定目标；锁血是客户端命令，只作用于自己',
+  enTip:'Fixed HP targets exactly who you choose; HP lock is client-side and only affects you',
+  params:[
+    {key:'mode',  label:'模式', enLabel:'Mode', type:'select', def:'fixed',
+     options:[{v:'fixed',t:'固定血量（可死）',en:'Fixed HP (can die)'},{v:'lock',t:'锁血（不死）',en:'HP Lock (immortal)'}]},
+    {key:'target',label:'作用对象', enLabel:'Target', type:'select', def:'self',
+     options:[
+       {v:'self',  t:'只改自己（不影响人机）',en:'Only me (bots untouched)'},
+       {v:'picker',t:'准星瞄准的目标',en:'Bot I aim at'},
+       {v:'all',   t:'全体（自己也变）',en:'Everyone (incl. me)'},
+     ]},
+    {key:'hp',    label:'血量值', enLabel:'HP Value', type:'number', min:1, max:99999, def:1000},
+  ],
+  build(p){
+    const c=['sv_cheats 1'];
+    if(p.mode==='lock'){
+      c.push('buddha 1');
+    }else{
+      const sel = p.target==='self' ? '!self' : (p.target==='picker' ? '!picker' : '!player');
+      c.push('ent_fire '+sel+' addoutput "health '+p.hp+'"');
     }
-  },
-  {
-    id:'botbehave', cat:'人机对局', enCat:'Bots', icon:'🎯', name:'人机行为设置', enName:'Bot Behavior',
-    desc:'人机站桩当靶子，或限制人机只用刀 / 手枪',
-    enDesc:'Freeze bots as targets, or restrict them to knife / pistol',
-    params:[
-      {key:'stop', label:'人机站桩', enLabel:'Bots Stand Still', type:'select', def:1,
-       options:[{v:1,t:'站桩不动',en:'Stand still'},{v:0,t:'正常移动',en:'Move'}]},
-      {key:'weapon', label:'人机武器', enLabel:'Bot Weapons', type:'select', def:'none',
-       options:[{v:'none',t:'不限',en:'Any'},{v:'knife',t:'只用刀',en:'Knife only'},{v:'pistol',t:'只用手枪',en:'Pistol only'}]},
-    ],
-    build(p){
-      const c=['sv_cheats 1','bot_stop '+p.stop];
-      if(p.weapon==='knife')  c.push('bot_knives_only 1');
-      if(p.weapon==='pistol') c.push('bot_pistols_only 1');
-      return c;
+    return c;
+  }
+},
+{
+  id:'ammo', cat:'玩家增强', enCat:'Player Boost', icon:'🔁', name:'无限弹药', enName:'Infinite Ammo',
+  desc:'子弹打不完，可选完全免换弹', enDesc:'Never run out; optionally skip reloading',
+  params:[
+    {key:'mode', label:'模式', enLabel:'Mode', type:'select', def:1,
+     options:[{v:1,t:'无限弹药',en:'Infinite ammo'},{v:2,t:'无限且免换弹',en:'Infinite, no reload'}]},
+  ],
+  build(p){ return ['sv_cheats 1','sv_infinite_ammo '+p.mode]; }
+},
+{
+  id:'recoil', cat:'玩家增强', enCat:'Player Boost', icon:'🎯', name:'无后坐力', enName:'No Recoil',
+  desc:'弹道完全笔直，专注准星定位练习',
+  enDesc:'Perfectly straight bullets for crosshair practice',
+  build(){ return ['sv_cheats 1','weapon_recoil_scale 0']; }
+},
+{
+  id:'god', cat:'玩家增强', enCat:'Player Boost', icon:'🛡️', name:'无敌模式', enName:'God Mode',
+  desc:'完全免疫伤害（客户端命令，只作用于自己）',
+  enDesc:'Full damage immunity (client-side, you only)',
+  params:[
+    {key:'on', label:'开关', enLabel:'Toggle', type:'select', def:1,
+     options:[{v:1,t:'开启',en:'On'},{v:0,t:'关闭',en:'Off'}]},
+  ],
+  build(p){ return ['sv_cheats 1','god '+p.on]; }
+},
+{
+  id:'noclip', cat:'玩家增强', enCat:'Player Boost', icon:'👻', name:'穿墙飞行', enName:'Noclip',
+  desc:'自由飞行、穿过所有障碍，方便看地图和找位置',
+  enDesc:'Free fly through walls and floors',
+  params:[
+    {key:'on', label:'开关', enLabel:'Toggle', type:'select', def:1,
+     options:[{v:1,t:'开启',en:'On'},{v:0,t:'关闭',en:'Off'}]},
+  ],
+  build(p){ return ['sv_cheats 1','noclip '+p.on]; }
+},
+{
+  id:'regen', cat:'玩家增强', enCat:'Player Boost', icon:'💚', name:'自动回血', enName:'Auto Regen',
+  desc:'血量随时间自动恢复，适合长时间连续练枪',
+  enDesc:'Health regenerates over time for long sessions',
+  params:[
+    {key:'on', label:'开关', enLabel:'Toggle', type:'select', def:1,
+     options:[{v:1,t:'开启',en:'On'},{v:0,t:'关闭',en:'Off'}]},
+  ],
+  build(p){ return ['sv_cheats 1','sv_regeneration_force_on '+p.on]; }
+},
+{
+  id:'jump', cat:'玩家增强', enCat:'Player Boost', icon:'🦘', name:'跳跃高度', enName:'Jump Height',
+  desc:'加大跳跃力度（默认约 301）', enDesc:'Boost jump impulse (default ~301)',
+  params:[
+    {key:'v', label:'跳跃力度', enLabel:'Jump Impulse', type:'number', min:0, max:9999, def:1000},
+  ],
+  build(p){ return ['sv_cheats 1','sv_jump_impulse '+p.v]; }
+},
+{
+  id:'gravity', cat:'玩家增强', enCat:'Player Boost', icon:'🌌', name:'重力', enName:'Gravity',
+  desc:'800 为正常重力，数字越小越飘，0 为完全无重力',
+  enDesc:'800 is normal; lower floats more, 0 is zero-G',
+  params:[
+    {key:'v', label:'重力值', enLabel:'Gravity', type:'number', min:0, max:8000, def:800},
+  ],
+  build(p){ return ['sv_cheats 1','sv_gravity '+p.v]; }
+},
+{
+  id:'bhop', cat:'玩家增强', enCat:'Player Boost', icon:'🏃', name:'连跳辅助', enName:'Bunnyhop Assist',
+  desc:'开启连跳支持，配合滚轮跳使用',
+  enDesc:'Enable bunnyhopping, best used with scroll-wheel jump',
+  params:[
+    {key:'enable', label:'允许超速连跳', enLabel:'Allow Bhop', type:'checkbox', def:true},
+    {key:'auto',   label:'自动连跳',     enLabel:'Auto Bhop',  type:'checkbox', def:true},
+    {key:'penalty',label:'跳跃惩罚（越小越顺）', enLabel:'Jump Penalty (lower = easier)', type:'number', min:0, max:1, step:0.001, def:0.01},
+  ],
+  build(p){
+    const c=['sv_cheats 1'];
+    if(p.enable) c.push('sv_enablebunnyhopping 1');
+    if(p.auto)   c.push('sv_autobunnyhopping 1');
+    c.push('sv_jump_spam_penalty_time '+p.penalty);
+    return c;
+  }
+},
+{
+  id:'speed', cat:'玩家增强', enCat:'Player Boost', icon:'⚡', name:'移动速度', enName:'Move Speed',
+  desc:'修改玩家最大移动速度（默认 320）',
+  enDesc:'Change max player speed (default 320)',
+  params:[
+    {key:'v', label:'最大速度', enLabel:'Max Speed', type:'number', min:100, max:2000, def:320},
+  ],
+  build(p){ return ['sv_cheats 1','sv_maxspeed '+p.v]; }
+},
+{
+  id:'slowmo', cat:'玩家增强', enCat:'Player Boost', icon:'🐢', name:'慢动作', enName:'Slow Motion',
+  desc:'放慢游戏时间流速，用来复盘动作细节',
+  enDesc:'Slow down game time to review movement',
+  params:[
+    {key:'v', label:'时间流速', enLabel:'Time Scale', type:'number', min:0.1, max:1, step:0.1, def:0.2},
+    {key:'reset', label:'附带恢复正常速度', enLabel:'Also add reset', type:'checkbox', def:false},
+  ],
+  build(p){
+    const c=['sv_cheats 1','host_timescale '+p.v];
+    if(p.reset) c.push('host_timescale 1');
+    return c;
+  }
+},
+{
+  id:'third', cat:'玩家增强', enCat:'Player Boost', icon:'🎥', name:'视角切换', enName:'Camera View',
+  desc:'第三人称观察身法，或切回第一人称',
+  enDesc:'Third-person view or back to first person',
+  params:[
+    {key:'mode', label:'视角', enLabel:'View', type:'select', def:'thirdperson',
+     options:[{v:'thirdperson',t:'第三人称',en:'Third person'},{v:'firstperson',t:'第一人称',en:'First person'}]},
+  ],
+  build(p){ return ['sv_cheats 1',p.mode]; }
+},
+/* ========== 武器 ========== */
+{
+  id:'weapon', cat:'武器', enCat:'Weapons', icon:'🔫', name:'给自己武器', enName:'Give Weapon',
+  desc:'枪械与道具用 give 直接发放；刀具会自动改用 subclass 生成',
+  enDesc:'Guns use give; knives are spawned via subclass automatically',
+  tip:'CS2 的刀不能用 give，选刀类会自动走 subclass_create',
+  enTip:'CS2 knives cannot be given — subclass_create is used instead',
+  params:[
+    {key:'w', label:'武器', enLabel:'Weapon', type:'select', def:'weapon_ak47',
+     options:[
+       {v:'weapon_ak47',          t:'AK-47',en:'AK-47'},
+       {v:'weapon_m4a1_silencer', t:'M4A1-S',en:'M4A1-S'},
+       {v:'weapon_m4a1',          t:'M4A4',en:'M4A4'},
+       {v:'weapon_awp',           t:'AWP 大狙',en:'AWP'},
+       {v:'weapon_ssg08',         t:'SSG 08 鸟狙',en:'SSG 08'},
+       {v:'weapon_deagle',        t:'沙漠之鹰',en:'Desert Eagle'},
+       {v:'weapon_usp_silencer',  t:'USP-S',en:'USP-S'},
+       {v:'weapon_glock',         t:'Glock-18',en:'Glock-18'},
+       {v:'weapon_mp9',           t:'MP9',en:'MP9'},
+       {v:'weapon_hegrenade',     t:'高爆手雷',en:'HE Grenade'},
+       {v:'weapon_flashbang',     t:'闪光弹',en:'Flashbang'},
+       {v:'weapon_smokegrenade',  t:'烟雾弹',en:'Smoke Grenade'},
+       {v:'weapon_molotov',       t:'燃烧瓶',en:'Molotov'},
+       {v:'item_kevlar',          t:'护甲',en:'Kevlar'},
+       {v:'item_assaultsuit',     t:'护甲+头盔',en:'Kevlar + Helmet'},
+       {v:'knife:515',            t:'蝴蝶刀（生成拾取）',en:'Butterfly (spawn & pick up)'},
+       {v:'knife:507',            t:'爪子刀 Karambit',en:'Karambit'},
+       {v:'knife:508',            t:'M9 刺刀',en:'M9 Bayonet'},
+       {v:'knife:514',            t:'Bowie 弯刀',en:'Bowie Knife'},
+       {v:'knife:525',            t:'骷髅刀 Skeleton',en:'Skeleton Knife'},
+       {v:'knife:524',            t:'默认小刀',en:'Default Knife'},
+     ]},
+  ],
+  build(p){
+    if(p.w.indexOf('knife:')===0){
+      return ['sv_cheats 1','mp_drop_knife_enable true','subclass_create '+p.w.split(':')[1]];
     }
-  },
-  {
-    id:'kick', cat:'人机对局', enCat:'Bots', icon:'🧹', name:'清除人机', enName:'Kick Bots',
-    desc:'踢出场上所有人机，重新开始', enDesc:'Kick all bots and restart the round',
-    build(){ return ['sv_cheats 1','bot_kick','mp_restartgame 1']; }
-  },
-
-  /* ---------- 对局规则 ---------- */
-  {
-    id:'round', cat:'对局规则', enCat:'Match Rules', icon:'⏱️', name:'回合与时间配置', enName:'Round & Time',
-    desc:'冻结时间、回合时长、最大回合数、无限时', enDesc:'Freeze time, round length, max rounds, no time limit',
-    params:[
-      {key:'freeze',   label:'冻结时间（秒）', enLabel:'Freeze Time (s)',  type:'number', min:0, max:60, def:0},
-      {key:'time',     label:'回合时长（分钟）', enLabel:'Round Length (min)', type:'number', min:1, max:999, def:60},
-      {key:'maxrounds',label:'最大回合数',     enLabel:'Max Rounds',       type:'number', min:1, max:999, def:30},
-      {key:'restart',  label:'立即重启回合',    enLabel:'Restart round now', type:'checkbox', def:true},
-    ],
-    build(p){
-      const c=['sv_cheats 1',
-        'mp_freezetime '+p.freeze,
-        'mp_roundtime '+p.time,
-        'mp_roundtime_defuse '+p.time,
-        'mp_roundtime_hostage '+p.time,
-        'mp_maxrounds '+p.maxrounds,
-        'mp_timelimit 0'];
-      if(p.restart) c.push('mp_restartgame 1');
-      return c;
-    }
-  },
-  {
-    id:'endwarmup', cat:'对局规则', enCat:'Match Rules', icon:'⏭️', name:'结束训练时间', enName:'End Training Time',
-    desc:'练习模式默认处于无限训练（热身）阶段，执行后立即进入正式回合（热身归零已由默认附加处理）',
-    enDesc:'Practice mode starts in unlimited training/warmup; this jumps straight into the real round',
-    build(){ return ['mp_warmup_pausetimer 0','mp_warmup_end']; }
-  },
-  {
-    id:'buy', cat:'对局规则', enCat:'Match Rules', icon:'💰', name:'购买配置', enName:'Buy Settings',
-    desc:'任意地点购买 + 超长购买时间 + 满钱', enDesc:'Buy anywhere + long buy time + full money',
-    params:[
-      {key:'anywhere',label:'任意地点购买',   enLabel:'Buy Anywhere',   type:'checkbox', def:true},
-      {key:'buytime', label:'购买时间（秒）', enLabel:'Buy Time (s)',    type:'number', min:1, max:99999, def:9999},
-      {key:'money',   label:'初始/最高金钱',  enLabel:'Start / Max Money', type:'number', min:0, max:16000, def:16000},
-    ],
-    build(p){
-      const c=['sv_cheats 1','mp_maxmoney '+p.money,'mp_startmoney '+p.money];
-      if(p.anywhere) c.push('mp_buy_anywhere 1');
-      c.push('mp_buytime '+p.buytime);
-      return c;
-    }
-  },
-
-  /* ---------- 玩家增强 ---------- */
-  {
-    id:'hp', cat:'玩家增强', enCat:'Player Boost', icon:'❤️', name:'设置血量', enName:'Set Health',
-    desc:'buddha 锁血方案设置血量（buddha_reset_hp 为改血量核心指令）',
-    enDesc:'Set HP via buddha lock (buddha_reset_hp is the core command)',
-    params:[
-      {key:'hp',   label:'目标血量',  enLabel:'Target HP',  type:'number', min:1, max:99999, def:1000},
-    ],
-    build(p){
-      return ['sv_cheats 1','buddha 1','buddha_reset_hp '+p.hp,'buddha 0'];
-    }
-  },
-  {
-    id:'ammo', cat:'玩家增强', enCat:'Player Boost', icon:'🔁', name:'无限弹药', enName:'Infinite Ammo',
-    desc:'子弹打不完', enDesc:'Never run out of bullets',
-    params:[
-      {key:'mode', label:'模式', enLabel:'Mode', type:'select', def:1,
-       options:[{v:1,t:'无限弹药',en:'Infinite ammo'},{v:2,t:'无限且免换弹',en:'Infinite, no reload'}]},
-    ],
-    build(p){ return ['sv_cheats 1','sv_infinite_ammo '+p.mode]; }
-  },
-  {
-    id:'recoil', cat:'玩家增强', enCat:'Player Boost', icon:'🎯', name:'无后坐力', enName:'No Recoil',
-    desc:'weapon_recoil_scale 0，压枪变直线', enDesc:'weapon_recoil_scale 0 — laser beam',
-    build(){ return ['sv_cheats 1','weapon_recoil_scale 0']; }
-  },
-  {
-    id:'jump', cat:'玩家增强', enCat:'Player Boost', icon:'🦘', name:'跳跃高度', enName:'Jump Height',
-    desc:'加大跳跃力度（默认约 301）', enDesc:'Boost jump impulse (default ~301)',
-    params:[
-      {key:'v', label:'跳跃力度', enLabel:'Jump Impulse', type:'number', min:0, max:9999, def:1000},
-    ],
-    build(p){ return ['sv_cheats 1','sv_jump_impulse '+p.v]; }
-  },
-  {
-    id:'gravity', cat:'玩家增强', enCat:'Player Boost', icon:'🌌', name:'重力', enName:'Gravity',
-    desc:'0 = 无重力漂浮，800 = 正常', enDesc:'0 = zero gravity, 800 = normal',
-    params:[
-      {key:'v', label:'重力值', enLabel:'Gravity', type:'number', min:0, max:8000, def:0},
-    ],
-    build(p){ return ['sv_cheats 1','sv_gravity '+p.v]; }
-  },
-  {
-    id:'slowmo', cat:'玩家增强', enCat:'Player Boost', icon:'🐢', name:'慢动作', enName:'Slow Motion',
-    desc:'时间流速 0.2 = 慢动作回放，1 = 正常', enDesc:'Timescale 0.2 = slow-mo replay, 1 = normal',
-    params:[
-      {key:'v', label:'时间流速', enLabel:'Timescale', type:'number', min:0.1, max:1, step:0.1, def:0.2},
-    ],
-    build(p){ return ['sv_cheats 1','host_timescale '+p.v]; }
-  },
-  {
-    id:'third', cat:'玩家增强', enCat:'Player Boost', icon:'🎥', name:'视角切换', enName:'Camera View',
-    desc:'第三人称观感 / 恢复第一人称', enDesc:'Third person / back to first person',
-    params:[
-      {key:'mode', label:'视角', enLabel:'View', type:'select', def:'thirdperson',
-       options:[{v:'thirdperson',t:'第三人称',en:'Third person'},{v:'firstperson',t:'第一人称',en:'First person'}]},
-    ],
-    build(p){ return ['sv_cheats 1',p.mode]; }
-  },
-
-  /* ---------- 武器 ---------- */
-  {
-    id:'weapon', cat:'武器', enCat:'Weapons', icon:'🔫', name:'给自己武器', enName:'Give Weapon',
-    desc:'give 直接获得武器；CS2 刀改用 subclass 生成（已自动处理）',
-    enDesc:'Give guns directly; knives use subclass in CS2 (handled automatically)',
-    params:[
-      {key:'w', label:'武器', enLabel:'Weapon', type:'select', def:'knife:515',
-       options:[
-         {v:'knife:515',t:'蝴蝶刀（生成地上，拾取）',en:'Butterfly (spawn & pick up)'},
-         {v:'knife:507',t:'爪子刀 Karambit',en:'Karambit'},
-         {v:'knife:508',t:'M9 刺刀',en:'M9 Bayonet'},
-         {v:'knife:514',t:'Bowie 弯刀',en:'Bowie Knife'},
-         {v:'knife:525',t:'骷髅刀 Skeleton',en:'Skeleton Knife'},
-         {v:'knife:524',t:'默认小刀',en:'Default Knife'},
-         {v:'weapon_awp',            t:'AWP 大狙',en:'AWP'},
-         {v:'weapon_ssg08',          t:'SSG 08 鸟狙',en:'SSG 08'},
-         {v:'weapon_ak47',           t:'AK-47',en:'AK-47'},
-         {v:'weapon_m4a1_silencer',  t:'M4A1-S',en:'M4A1-S'},
-         {v:'weapon_m4a1',           t:'M4A4',en:'M4A4'},
-         {v:'weapon_deagle',         t:'沙漠之鹰',en:'Desert Eagle'},
-         {v:'weapon_usp_silencer',   t:'USP-S',en:'USP-S'},
-         {v:'weapon_glock',          t:'Glock-18',en:'Glock-18'},
-         {v:'weapon_mp9',            t:'MP9',en:'MP9'},
-         {v:'weapon_hegrenade',      t:'高爆手雷',en:'HE Grenade'},
-         {v:'weapon_flashbang',      t:'闪光弹',en:'Flashbang'},
-         {v:'weapon_smokegrenade',   t:'烟雾弹',en:'Smoke Grenade'},
-       ]},
-    ],
-    build(p){
-      if(p.w.indexOf('knife:')===0){
-        return ['sv_cheats 1','mp_drop_knife_enable true','subclass_create '+p.w.split(':')[1]];
-      }
-      return ['sv_cheats 1','give '+p.w];
-    }
-  },
-  {
-    id:'knifeshow', cat:'武器', enCat:'Weapons', icon:'🔪', name:'蝴蝶刀展示（示例）', enName:'Butterfly Showcase',
-    desc:'示例特效：允许丢刀 + 生成蝴蝶刀实体，走过去拾取（正常视角）',
-    enDesc:'Enable drop-knife + spawn butterfly knife, walk over to pick up (normal camera)',
-    build(){ return ['sv_cheats 1','mp_drop_knife_enable true','subclass_create 515']; }
-  },
-  {
-    id:'dropknife', cat:'武器', enCat:'Weapons', icon:'🪂', name:'允许丢弃刀/枪', enName:'Allow Dropping Knife/Gun',
-    desc:'mp_drop_knife_enable true，可以丢出刀', enDesc:'mp_drop_knife_enable true — drop your knife',
-    build(){ return ['sv_cheats 1','mp_drop_knife_enable true']; }
-  },
-  {
-    id:'bindknife', cat:'武器', enCat:'Weapons', icon:'⌨️', name:'按键绑定 · 一键出刀', enName:'Keybind · One-key Knife',
-    desc:'按 P 等按键即可生成刀。网上用不了是因为 give 刀在 CS2 已失效，刀必须走 subclass',
-    enDesc:'Press a key to spawn a knife. Online guides fail because give is dead for knives in CS2 — subclass is required',
-    params:[
-      {key:'key', label:'按键', enLabel:'Key', type:'text', def:'p',
-       hint:'字母直接写，如 p；功能键如 F1、F2；鼠标 MOUSE4 / MOUSE5',
-       enHint:'Letters like p; function keys F1, F2…; mouse MOUSE4 / MOUSE5'},
-      {key:'knife', label:'刀型', enLabel:'Knife', type:'select', def:515,
-       options:[
-         {v:515,t:'蝴蝶刀 Butterfly',en:'Butterfly'},
-         {v:507,t:'爪子刀 Karambit',en:'Karambit'},
-         {v:508,t:'M9 刺刀',en:'M9 Bayonet'},
-         {v:514,t:'Bowie 弯刀',en:'Bowie'},
-         {v:525,t:'骷髅刀 Skeleton',en:'Skeleton'},
-         {v:524,t:'默认小刀',en:'Default'},
-       ]},
-    ],
-    build(p){
-      return ['sv_cheats 1','mp_drop_knife_enable true','bind '+p.key+' "subclass_create '+p.knife+'"'];
-    }
-  },
-  {
-    id:'unbindkey', cat:'武器', enCat:'Weapons', icon:'🗝️', name:'解除按键绑定', enName:'Unbind Key',
-    desc:'取消指定按键的绑定（比如之前绑的一键出刀）', enDesc:'Remove a key binding (e.g. the knife key)',
-    params:[
-      {key:'key', label:'按键', enLabel:'Key', type:'text', def:'p'},
-    ],
-    build(p){ return ['unbind '+p.key]; }
-  },
-
-  /* ---------- 多人房间 ---------- */
-  {
-    id:'hostprep', cat:'多人房间', enCat:'Multiplayer', icon:'🏠', name:'房主准备（好友加入前）', enName:'Host Prep (before friends join)',
-    desc:'房主在好友 connect 前执行一次，开启作弊与允许丢刀；之后好友才能自己出刀',
-    enDesc:'Run once as host before friends connect — enables cheats & knife dropping so guests can spawn knives too',
-    build(){ return ['sv_cheats 1','mp_drop_knife_enable true']; }
-  },
-  {
-    id:'guestknife', cat:'多人房间', enCat:'Multiplayer', icon:'👥', name:'好友出刀绑定（发给好友）', enName:'Guest Knife Bind (send to friend)',
-    desc:'房主已准备后，把这段发给好友，好友在自己控制台粘贴，按 P 即可在自己脚下生成刀',
-    enDesc:'After host prep, send this to your friend — they paste it in their own console and press the key to spawn a knife',
-    clientOnly:true,
-    params:[
-      {key:'key', label:'按键', enLabel:'Key', type:'text', def:'p',
-       hint:'字母直接写，如 p；功能键如 F1、F2',
-       enHint:'Letters like p; function keys F1, F2…'},
-      {key:'knife', label:'刀型', enLabel:'Knife', type:'select', def:515,
-       options:[
-         {v:515,t:'蝴蝶刀 Butterfly',en:'Butterfly'},
-         {v:507,t:'爪子刀 Karambit',en:'Karambit'},
-         {v:508,t:'M9 刺刀',en:'M9 Bayonet'},
-         {v:514,t:'Bowie 弯刀',en:'Bowie'},
-         {v:525,t:'骷髅刀 Skeleton',en:'Skeleton'},
-         {v:524,t:'默认小刀',en:'Default'},
-       ]},
-    ],
-    build(p){ return ['bind '+p.key+' "subclass_create '+p.knife+'"']; }
-  },
-
-  /* ---------- 训练辅助 ---------- */
-  {
-    id:'train', cat:'训练辅助', enCat:'Training', icon:'📡', name:'弹道与投掷物轨迹', enName:'Impacts & Grenade Trajectory',
-    desc:'显示弹着点 + 手雷飞行轨迹', enDesc:'Show bullet impacts + grenade flight paths',
-    params:[
-      {key:'impact',     label:'显示弹着点',      enLabel:'Show bullet impacts',   type:'checkbox', def:true},
-      {key:'impact_time',label:'弹着点持续（秒）', enLabel:'Impact time (s)',       type:'number', min:1, max:60, def:10},
-      {key:'grenade',    label:'显示手雷轨迹',    enLabel:'Show grenade trajectory', type:'checkbox', def:true},
-      {key:'grenade_time',label:'轨迹持续（秒）', enLabel:'Trajectory time (s)',    type:'number', min:1, max:60, def:10},
-    ],
-    build(p){
-      const c=['sv_cheats 1'];
-      if(p.impact){ c.push('sv_showimpacts 1','sv_showimpacts_time '+p.impact_time); }
-      if(p.grenade){ c.push('sv_grenade_trajectory 1','sv_grenade_trajectory_time '+p.grenade_time); }
-      return c;
-    }
-  },
-  {
-    id:'nades', cat:'训练辅助', enCat:'Training', icon:'💣', name:'无限手雷', enName:'Infinite Grenades',
-    desc:'扩充投掷物携带上限（默认 1 颗）', enDesc:'Raise grenade carry limit (default 1)',
-    params:[
-      {key:'n', label:'携带上限', enLabel:'Carry Limit', type:'number', min:0, max:10, def:5},
-    ],
-    build(p){ return ['sv_cheats 1','ammo_grenade_limit_total '+p.n]; }
-  },
+    return ['sv_cheats 1','give '+p.w];
+  }
+},
+{
+  id:'knifeshow', cat:'武器', enCat:'Weapons', icon:'🔪', name:'蝴蝶刀展示', enName:'Butterfly Showcase',
+  desc:'开启丢刀并生成蝴蝶刀实体，走过去拾取',
+  enDesc:'Enable knife drop and spawn a butterfly to pick up',
+  build(){ return ['sv_cheats 1','mp_drop_knife_enable true','subclass_create 515']; }
+},
+{
+  id:'dropknife', cat:'武器', enCat:'Weapons', icon:'🪂', name:'允许丢弃刀/枪', enName:'Allow Knife Drop',
+  desc:'开启丢刀功能，可以把刀丢给别人',
+  enDesc:'Allow dropping knives',
+  build(){ return ['sv_cheats 1','mp_drop_knife_enable true']; }
+},
+{
+  id:'bindknife', cat:'武器', enCat:'Weapons', icon:'⌨️', name:'按键绑定 · 一键出刀', enName:'Keybind · One-key Knife',
+  desc:'把出刀指令绑到一个键上，按下即在脚下生成刀',
+  enDesc:'Bind knife spawning to a key — press it to spawn a knife',
+  tip:'绑定后每次按该键都会生成一把刀，走过去拾取',
+  enTip:'Each press spawns a knife on the ground; walk over to pick it up',
+  params:[
+    {key:'key', label:'按键', enLabel:'Key', type:'text', def:'p',
+     hint:'字母直接写，如 p；功能键如 F1；鼠标 MOUSE4', enHint:'Letters like p; F1, F2; mouse MOUSE4'},
+    {key:'knife', label:'刀型', enLabel:'Knife', type:'select', def:515,
+     options:[
+       {v:515,t:'蝴蝶刀',en:'Butterfly'},{v:507,t:'爪子刀',en:'Karambit'},
+       {v:508,t:'M9 刺刀',en:'M9 Bayonet'},{v:514,t:'Bowie 弯刀',en:'Bowie'},
+       {v:525,t:'骷髅刀',en:'Skeleton'},{v:524,t:'默认小刀',en:'Default'},
+     ]},
+  ],
+  build(p){ return ['sv_cheats 1','mp_drop_knife_enable true','bind '+p.key+' "subclass_create '+p.knife+'"']; }
+},
+{
+  id:'unbindkey', cat:'武器', enCat:'Weapons', icon:'🗝️', name:'解除按键绑定', enName:'Unbind Key',
+  desc:'取消某个按键上的绑定，恢复到默认功能',
+  enDesc:'Remove a key binding and restore its default action',
+  params:[
+    {key:'key', label:'按键', enLabel:'Key', type:'text', def:'p'},
+  ],
+  build(p){ return ['unbind '+p.key]; }
+},
+/* ========== 投掷物 ========== */
+{
+  id:'nades', cat:'投掷物', enCat:'Utility', icon:'💣', name:'投掷物配置', enName:'Utility Setup',
+  desc:'提高携带上限，并一键发放全套投掷物',
+  enDesc:'Raise the carry limit and hand out a full utility set',
+  params:[
+    {key:'limit',  label:'携带上限', enLabel:'Carry Limit', type:'number', min:0, max:10, def:5},
+    {key:'giveAll',label:'发放全套投掷物', enLabel:'Give full set', type:'checkbox', def:true},
+  ],
+  build(p){
+    const c=['sv_cheats 1','ammo_grenade_limit_total '+p.limit];
+    if(p.giveAll) c.push('give weapon_smokegrenade','give weapon_flashbang',
+      'give weapon_hegrenade','give weapon_molotov','give weapon_incgrenade','give weapon_decoy');
+    return c;
+  }
+},
+{
+  id:'rethrow', cat:'投掷物', enCat:'Utility', icon:'🔂', name:'一键重投上一次投掷物', enName:'Rethrow Last Utility',
+  desc:'把你上一次扔出的投掷物原样再扔一遍（烟、闪、火、雷通用）',
+  enDesc:'Rethrow your last utility exactly as thrown (smoke, flash, molotov, HE)',
+  tip:'重投的轨迹与参数完全一致，练 lineup 时不用来回跑位',
+  enTip:'Identical trajectory and parameters — no need to reposition',
+  params:[
+    {key:'mode', label:'使用方式', enLabel:'Usage', type:'select', def:'bind',
+     options:[{v:'bind',t:'绑定按键（推荐）',en:'Bind to a key'},{v:'cmd',t:'只要指令',en:'Command only'}]},
+    {key:'key',  label:'绑定按键', enLabel:'Key', type:'text', def:'x'},
+  ],
+  build(p){
+    const c=['sv_cheats 1'];
+    if(p.mode==='bind') c.push('bind '+p.key+' "sv_rethrow_last_grenade"');
+    else c.push('sv_rethrow_last_grenade');
+    return c;
+  }
+},
+{
+  id:'clearutil', cat:'投掷物', enCat:'Utility', icon:'🧽', name:'一键清除投掷物', enName:'Clear All Utility',
+  desc:'绑定按键，一键抹掉地图上所有烟雾、燃烧、闪光与手雷',
+  enDesc:'Bind a key to wipe every smoke, molotov, flash and grenade on the map',
+  tip:'练投掷物时最实用的绑键，按一下地图立刻干净',
+  enTip:'The most useful utility bind — one press clears the map',
+  params:[
+    {key:'key', label:'绑定按键', enLabel:'Key', type:'text', def:'n'},
+  ],
+  build(p){
+    const list = ['smokegrenade_projectile','molotov_projectile','incgrenade_projectile',
+      'inferno','flashbang_projectile','hegrenade_projectile','decoy_projectile']
+      .map(x=>'ent_fire '+x+' kill').join(';');
+    return ['sv_cheats 1','bind '+p.key+' "'+list+'"'];
+  }
+},
+{
+  id:'trajpreview', cat:'投掷物', enCat:'Utility', icon:'📐', name:'投掷物轨迹预览窗', enName:'Trajectory Preview',
+  desc:'在屏幕角落显示投掷物落点预览，方便练细节位置',
+  enDesc:'Show a landing preview overlay for precise utility practice',
+  params:[
+    {key:'on', label:'开关', enLabel:'Toggle', type:'select', def:1,
+     options:[{v:1,t:'开启',en:'On'},{v:0,t:'关闭',en:'Off'}]},
+  ],
+  build(p){ return ['sv_cheats 1','sv_grenade_trajectory_prac_pipreview '+p.on]; }
+},
+/* ========== 显示与信息 ========== */
+{
+  id:'showpos', cat:'显示与信息', enCat:'Display', icon:'🧭', name:'显示坐标与速度', enName:'Position & Speed',
+  desc:'屏幕显示自己的坐标和速度，练跳点、测距离必备',
+  enDesc:'Show your coordinates and speed — essential for jump spots',
+  params:[
+    {key:'on', label:'开关', enLabel:'Toggle', type:'select', def:1,
+     options:[{v:1,t:'开启',en:'On'},{v:0,t:'关闭',en:'Off'}]},
+  ],
+  build(p){ return ['cl_showpos '+p.on]; }
+},
+{
+  id:'perf', cat:'显示与信息', enCat:'Display', icon:'📊', name:'FPS 与网络信息', enName:'FPS & Net',
+  desc:'显示帧数和网络延迟信息',
+  enDesc:'Show FPS and network latency',
+  params:[
+    {key:'fps', label:'FPS 显示', enLabel:'FPS Display', type:'select', def:1,
+     options:[{v:0,t:'关闭',en:'Off'},{v:1,t:'基础',en:'Basic'},{v:2,t:'详细',en:'Detailed'}]},
+    {key:'net', label:'网络信息', enLabel:'Net Graph', type:'checkbox', def:true},
+  ],
+  build(p){
+    const c=['cl_showfps '+p.fps];
+    if(p.net) c.push('cq_netgraph 1');
+    return c;
+  }
+},
+{
+  id:'teamequip', cat:'显示与信息', enCat:'Display', icon:'🎽', name:'显示队友装备', enName:'Team Equipment',
+  desc:'在队友头顶显示他们的武器与道具',
+  enDesc:'Show teammates weapons and gear overhead',
+  params:[
+    {key:'on', label:'开关', enLabel:'Toggle', type:'select', def:1,
+     options:[{v:1,t:'开启',en:'On'},{v:0,t:'关闭',en:'Off'}]},
+  ],
+  build(p){ return ['cl_show_team_equipment '+p.on]; }
+},
+{
+  id:'bbox', cat:'显示与信息', enCat:'Display', icon:'📦', name:'显示碰撞盒', enName:'Show Hitboxes',
+  desc:'显示实体的碰撞范围，理解命中判定',
+  enDesc:'Display entity bounding boxes to understand hitboxes',
+  params:[
+    {key:'mode', label:'方式', enLabel:'Mode', type:'select', def:'bind',
+     options:[{v:'bind',t:'绑定按键（按住显示）',en:'Bind to key'},{v:'cmd',t:'只要指令',en:'Command only'}]},
+    {key:'key',  label:'绑定按键', enLabel:'Key', type:'text', def:'j'},
+  ],
+  build(p){
+    const c=['sv_cheats 1'];
+    if(p.mode==='bind') c.push('bind '+p.key+' "ent_bbox"');
+    else c.push('ent_bbox');
+    return c;
+  }
+},
+/* ========== 训练辅助 ========== */
+{
+  id:'train', cat:'训练辅助', enCat:'Training', icon:'📡', name:'弹道与轨迹显示', enName:'Impacts & Trajectory',
+  desc:'显示子弹弹着点与投掷物飞行轨迹',
+  enDesc:'Show bullet impacts and grenade flight paths',
+  params:[
+    {key:'impact',      label:'显示弹着点',      enLabel:'Show impacts',        type:'checkbox', def:true},
+    {key:'impact_time', label:'弹着点持续（秒）', enLabel:'Impact time (s)',     type:'number', min:1, max:60, def:10},
+    {key:'grenade',     label:'显示投掷物轨迹',  enLabel:'Show trajectory',     type:'checkbox', def:true},
+    {key:'grenade_time',label:'轨迹持续（秒）',  enLabel:'Trajectory time (s)', type:'number', min:1, max:60, def:10},
+  ],
+  build(p){
+    const c=['sv_cheats 1'];
+    if(p.impact)  c.push('sv_showimpacts 1','sv_showimpacts_time '+p.impact_time);
+    if(p.grenade) c.push('sv_grenade_trajectory 1','sv_grenade_trajectory_time '+p.grenade_time);
+    return c;
+  }
+},
+{
+  id:'cleardecals', cat:'训练辅助', enCat:'Training', icon:'🩸', name:'一键清除血迹', enName:'Clear Decals',
+  desc:'绑定按键，一键清掉墙上的血迹和弹孔',
+  enDesc:'Bind a key to wipe blood and bullet holes',
+  tip:'按一下地图立刻干净，找弹道更清楚',
+  enTip:'One press clears the map for a cleaner view',
+  params:[
+    {key:'key', label:'绑定按键', enLabel:'Key', type:'text', def:'v'},
+  ],
+  build(p){ return ['bind '+p.key+' "r_cleardecals"']; }
+},
 ];
 
 /* ================= 模板 ================= */
 const TEMPLATES = [
   {
-    name:'CT 5v5 · 高难度人机', enName:'CT 5v5 · Hard Bots', icon:'🛡️',
-    desc:'我方 CT 满编 5 人，敌方 T 5 人，难度 5，冻结 3 秒',
-    enDesc:'Full CT team of 5 vs 5 T bots, difficulty 5, 3s freeze',
+    icon:'🎯', name:'练枪房一套流', enName:'Aim Training Set',
+    desc:'站桩人机 + 无限弹药 + 弹道显示 + 无后坐力 + 清血迹',
+    enDesc:'Stand-still bots + infinite ammo + impacts + no recoil + clear decals',
     set(){
-      setModule('bot',{side:'CT',enemy:5,ally:4,diff:5,freeze:3});
+      setModule('bot',{side:'CT',enemy:5,ally:0,diff:3,freeze:0});
+      setModule('botbehave',{stop:1,crouch:false,weapon:'none'});
+      setModule('ammo',{mode:2});
+      setModule('recoil',{});
+      setModule('train',{impact:true,impact_time:10,grenade:false,grenade_time:10});
+      setModule('cleardecals',{key:'v'});
     }
   },
   {
-    name:'血量 1000 + 蝴蝶刀', enName:'1000 HP + Butterfly', icon:'❤️',
-    desc:'buddha 锁血方案设血量 1000，并生成蝴蝶刀展示',
-    enDesc:'buddha-lock HP to 1000 + butterfly knife showcase',
+    icon:'🛡️', name:'CT 5v5 高难度人机', enName:'CT 5v5 Hard Bots',
+    desc:'我方 CT 满编 5 人 vs 敌方 T 5 人，难度 5',
+    enDesc:'Full CT team of 5 vs 5 T bots, difficulty 5',
+    set(){ setModule('bot',{side:'CT',enemy:5,ally:4,diff:5,freeze:3}); }
+  },
+  {
+    icon:'🎯', name:'1v5 人机训练', enName:'1v5 Bot Training',
+    desc:'独自面对 5 个高难度人机，练残局',
+    enDesc:'Solo against 5 hard bots for clutch practice',
+    set(){ setModule('bot',{side:'CT',enemy:5,ally:0,diff:5,freeze:3}); }
+  },
+  {
+    icon:'❤️', name:'血量 1000 + 蝴蝶刀', enName:'1000 HP + Butterfly',
+    desc:'只把自己血量设为 1000，并生成蝴蝶刀',
+    enDesc:'Set only your HP to 1000 and spawn a butterfly knife',
+    set(){ setModule('hp',{mode:'fixed',target:'self',hp:1000}); setModule('knifeshow',{}); }
+  },
+  {
+    icon:'💣', name:'投掷物练习', enName:'Utility Practice',
+    desc:'轨迹显示 + 落点预览 + 无限投掷物 + 重投绑键',
+    enDesc:'Trajectory + preview + infinite utility + rethrow bind',
     set(){
-      setModule('hp',{hp:1000});
-      setModule('knifeshow',{});
+      setModule('train',{impact:false,impact_time:10,grenade:true,grenade_time:10});
+      setModule('trajpreview',{on:1});
+      setModule('nades',{limit:5,giveAll:true});
+      setModule('rethrow',{mode:'bind',key:'x'});
     }
   },
   {
-    name:'1v5 人机训练', enName:'1v5 Bot Training', icon:'🎯',
-    desc:'我方 CT 一人，敌方 T 5 人，高难度，练残局',
-    enDesc:'Solo CT vs 5 T bots, hard difficulty, clutch practice',
+    icon:'📍', name:'预瞄训练', enName:'Pre-aim Training',
+    desc:'人机定位放置 + 站桩 + 弹道显示',
+    enDesc:'Place bot + stand still + show impacts',
     set(){
-      setModule('bot',{side:'CT',enemy:5,ally:0,diff:5,freeze:3});
+      setModule('botplace',{freeze:true});
+      setModule('train',{impact:true,impact_time:15,grenade:false,grenade_time:10});
+    }
+  },
+  {
+    icon:'🏃', name:'连跳练习', enName:'Bhop Practice',
+    desc:'连跳辅助 + 速度显示 + 复活',
+    enDesc:'Bhop assist + speed display + instant respawn',
+    set(){
+      setModule('bhop',{enable:true,auto:true,penalty:0.01});
+      setModule('showpos',{on:1});
+      setModule('respawn',{ct:true,t:true});
+    }
+  },
+  {
+    icon:'🔧', name:'拆包练习', enName:'Defuse Practice',
+    desc:'不结束回合 + C4 计时 + 立即复活',
+    enDesc:'No round end + C4 timer + instant respawn',
+    set(){
+      setModule('bombrules',{c4:40,setc4:true,ignore:true});
+      setModule('respawn',{ct:true,t:true});
+      setModule('buy',{anywhere:true,buytime:9999,money:16000});
+    }
+  },
+  {
+    icon:'⚔️', name:'1v1 残局', enName:'1v1 Duel',
+    desc:'单人 vs 单个人机，练对枪与残局处理',
+    enDesc:'Solo vs a single bot for duel practice',
+    set(){
+      setModule('bot',{side:'CT',enemy:1,ally:0,diff:4,freeze:3});
+      setModule('respawn',{ct:true,t:true});
+    }
+  },
+  {
+    icon:'🔪', name:'纯刀 / 手枪对练', enName:'Knife & Pistol Only',
+    desc:'限制人机只用刀或手枪，练近战与手枪枪法',
+    enDesc:'Restrict bots to knife or pistol for close-range practice',
+    set(){
+      setModule('bot',{side:'CT',enemy:3,ally:0,diff:3,freeze:0});
+      setModule('botbehave',{stop:0,crouch:false,weapon:'pistol'});
+      setModule('respawn',{ct:true,t:true});
     }
   },
 ];
 
 /* ================= 渲染 ================= */
+function optText(o){ return (typeof o==='object') ? T(o.t, o.en) : o; }
+function optVal(o){ return (typeof o==='object') ? o.v : o; }
+
 function modParamsHtml(m){
   if(!m.params) return '';
   let p = '<div class="mod-params">';
@@ -677,9 +1188,8 @@ function modParamsHtml(m){
     const hint = pr.hint ? T(pr.hint, pr.enHint) : '';
     if(pr.type==='select'){
       const opts = pr.options.map(o=>{
-        const v = (typeof o==='object') ? o.v : o;
-        const txt = (typeof o==='object') ? T(o.t, o.en) : o;
-        return '<option value="'+v+'"'+(String(v)===String(pr.def)?' selected':'')+'>'+txt+'</option>';
+        const v = optVal(o);
+        return '<option value="'+v+'"'+(String(v)===String(pr.def)?' selected':'')+'>'+optText(o)+'</option>';
       }).join('');
       p += '<label class="pr">'+label+'<select id="'+id+'" data-key="'+pr.key+'">'+opts+'</select></label>';
     }else if(pr.type==='checkbox'){
@@ -701,15 +1211,19 @@ function renderModules(){
   for(const m of MODULES) if(!cats.includes(m.cat)) cats.push(m.cat);
   let html = '';
   for(const cat of cats){
-    html += '<div class="cat">'+T(cat, MODULES.find(x=>x.cat===cat).enCat)+'</div><div class="mod-grid">';
+    const first = MODULES.find(x=>x.cat===cat);
+    html += '<div class="cat" data-cat="'+cat+'"><span class="arrow">▼</span>'+T(cat, first.enCat)+'</div>';
+    html += '<div class="mod-grid" data-grid="'+cat+'">';
     for(const m of MODULES.filter(x=>x.cat===cat)){
-      html += '<div class="mod" data-id="'+m.id+'">'+
+      const search = (m.name+' '+m.enName+' '+m.desc+' '+m.enDesc+' '+cat+' '+first.enCat).toLowerCase();
+      html += '<div class="mod" data-id="'+m.id+'" data-search="'+search.replace(/"/g,'')+'">'+
         '<div class="mod-head">'+
           '<span class="mod-check">✓</span>'+
           '<span class="mod-icon">'+m.icon+'</span>'+
           '<div class="mod-info">'+
             '<div class="mod-name">'+T(m.name, m.enName)+'</div>'+
-            (m.desc?'<div class="mod-desc">'+T(m.desc, m.enDesc)+'</div>':'')+
+            '<div class="mod-desc">'+T(m.desc, m.enDesc)+'</div>'+
+            (m.tip?'<div class="mod-tip">💡 '+T(m.tip, m.enTip)+'</div>':'')+
           '</div>'+
         '</div>'+
         modParamsHtml(m)+
@@ -721,71 +1235,167 @@ function renderModules(){
 }
 
 function renderTemplates(){
-  const grid = document.getElementById('tplGrid');
-  grid.innerHTML = TEMPLATES.map((t,i)=>
+  document.getElementById('tplGrid').innerHTML = TEMPLATES.map((t,i)=>
     '<div class="tpl" data-tpl="'+i+'">'+
       '<span class="tpl-icon">'+t.icon+'</span>'+
-      '<div><div class="tpl-name">'+T(t.name, t.enName)+'</div><div class="tpl-desc">'+T(t.desc, t.enDesc)+'</div></div>'+
+      '<div><div class="tpl-name">'+T(t.name, t.enName)+'</div>'+
+      '<div class="tpl-desc">'+T(t.desc, t.enDesc)+'</div></div>'+
     '</div>'
   ).join('');
 }
 
-/* ================= 参数读取 ================= */
+function renderRefs(){
+  document.getElementById('refTable').innerHTML = REFS.map(r=>
+    '<tr><td>'+r[0]+'</td><td>'+T(r[1].zh, r[1].en)+'</td></tr>'
+  ).join('');
+}
+
+/* ================= 参数 ================= */
 function getParams(m){
   const p = {};
   for(const pr of (m.params||[])){
     const el = document.getElementById('p_'+m.id+'_'+pr.key);
     if(!el){ p[pr.key]=pr.def; continue; }
-    if(pr.type==='checkbox')      p[pr.key]=el.checked;
-    else if(pr.type==='number')   p[pr.key]=parseFloat(el.value)||0;
-    else                          p[pr.key]=el.value;
+    if(pr.type==='checkbox')    p[pr.key]=el.checked;
+    else if(pr.type==='number') p[pr.key]=clampNum(el, pr);
+    else                        p[pr.key]=el.value;
   }
   return p;
 }
-
-function selectedModules(){
-  return MODULES.filter(m=>document.querySelector('.mod[data-id="'+m.id+'"].active'));
+function clampNum(el, pr){
+  let v = parseFloat(el.value);
+  if(isNaN(v)) v = pr.def;
+  if(pr.min!==undefined && v < pr.min) v = pr.min;
+  if(pr.max!==undefined && v > pr.max) v = pr.max;
+  return v;
 }
-
-let autoWarmup = true;
-
-function buildAll(){
+/* 快速模板用：勾选一个模块并写入参数（参数按 min/max 夹紧） */
+function setModule(id, params){
+  const mod = document.querySelector('.mod[data-id="'+id+'"]');
+  if(!mod) return;
+  mod.classList.add('active');
+  if(!params) return;
+  for(const key in params){
+    const el = document.getElementById('p_'+id+'_'+key);
+    if(!el) continue;
+    const v = params[key];
+    if(el.type==='checkbox'){
+      el.checked = !!v;
+    }else if(el.type==='number'){
+      const pr = findParam(el.id);
+      let n = parseFloat(v);
+      if(isNaN(n)) n = pr ? pr.def : 0;
+      if(pr){
+        if(pr.min!==undefined && n < pr.min) n = pr.min;
+        if(pr.max!==undefined && n > pr.max) n = pr.max;
+      }
+      el.value = n;
+    }else{
+      el.value = v;
+    }
+  }
+}
+function selectedModules(){
+  return MODULES.filter(m=>{
+    const el = document.querySelector('.mod[data-id="'+m.id+'"]');
+    return el && el.classList.contains('active');
+  });
+}
+function buildGrouped(){
+  const groups = [];
   const mods = selectedModules();
-  const cmds=[];
-  const clientOnly = mods.length>0 && mods.every(m=>m.clientOnly);
-  if(autoWarmup && !clientOnly) cmds.push('mp_warmuptime 0');
-  for(const m of mods) cmds.push(...m.build(getParams(m)));
-  return cmds;
+  if(autoWarmup && mods.length) groups.push({name:T('默认','Defaults'), cmds:['mp_warmuptime 0']});
+  for(const m of mods) groups.push({name:T(m.name, m.enName), cmds:m.build(getParams(m))});
+  return groups;
+}
+function flatten(groups){
+  const all = [];
+  for(const g of groups) all.push(...g.cmds);
+  return all;
+}
+/* 去重规则：同一条指令由「第一个产出它的模块」负责。
+   - 跨模块重复（多个模块各带一条 sv_cheats 1）→ 去掉后面的；
+   - 同一模块内部重复产出（bot_add_ct ×5）→ 视为有意设计，全部保留。 */
+function dedupe(groups){
+  const owner = new Map(), list = [], groupCmds = groups.map(()=>[]);
+  let removed = 0;
+  groups.forEach((g, gi)=>{
+    for(const c of g.cmds){
+      const k = String(c).trim().toLowerCase();
+      if(owner.has(k)){
+        if(owner.get(k) !== gi){ removed++; continue; }
+      }else{
+        owner.set(k, gi);
+      }
+      list.push(c); groupCmds[gi].push(c);
+    }
+  });
+  return {list:list, groupCmds:groupCmds, removed:removed};
 }
 
 /* ================= 生成 ================= */
 let currentView = 'compact';
+let autoWarmup = true;
+try{ const s = localStorage.getItem('cs2gen_warmup'); if(s!==null) autoWarmup = (s==='1'); }catch(e){}
 
 function generate(){
-  const cmds = buildAll();
+  const groups = buildGrouped();
+  const dd = dedupe(groups);
+  const cmds = dd.list;
   const full = cmds.join(';');
   const out = document.getElementById('outText');
-  if(!full){
+
+  if(!cmds.length){
     out.textContent = t('outEmpty2');
     out.classList.add('empty');
   }else{
     out.classList.remove('empty');
-    out.textContent = currentView==='lines' ? cmds.join(';\n') : full;
+    if(currentView==='compact'){
+      out.textContent = full;
+    }else if(currentView==='lines'){
+      out.textContent = cmds.join(';\n');
+    }else{
+      const parts = [];
+      groups.forEach((g, gi)=>{
+        const gc = dd.groupCmds[gi];
+        if(!gc.length) return;
+        parts.push('【'+g.name+'】\n'+gc.join(';\n'));
+      });
+      out.textContent = parts.join('\n\n');
+    }
   }
   document.getElementById('cmdCount').textContent = tf('cmdCount',{n:cmds.length});
   document.getElementById('selCount').textContent = tf('selCount',{n:selectedModules().length});
   document.getElementById('outHint').textContent = cmds.length
-    ? tf('outHint',{n:cmds.length, c:full.length})
+    ? tf('outHint',{n:cmds.length, c:full.length, d:dd.removed})
     : '';
+  const btn = document.getElementById('copyBtn');
+  btn.disabled = !cmds.length;
+  document.getElementById('cfgBtn').disabled = !cmds.length;
 }
 
-/* ================= 语言切换 ================= */
+/* ================= 语言/主题应用 ================= */
+function applyStaticLang(){
+  document.documentElement.lang = lang==='zh' ? 'zh-CN' : 'en';
+  document.title = lang==='zh' ? 'CS2 指令生成器' : 'CS2 Command Generator';
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k = el.dataset.i18n;
+    if(el.dataset.i18nHtml) el.innerHTML = t(k);
+    else el.textContent = t(k);
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    el.placeholder = t(el.dataset.i18nPh);
+  });
+  document.getElementById('langBtn').textContent = lang==='zh' ? 'EN' : '中文';
+}
+
+/* ================= 状态快照 ================= */
 function snapshotState(){
   const s = {};
   for(const m of MODULES){
     const el = document.querySelector('.mod[data-id="'+m.id+'"]');
     if(!el) continue;
-    s[m.id] = { active: el.classList.contains('active'), params: getParams(m) };
+    s[m.id] = {active:el.classList.contains('active'), params:getParams(m)};
   }
   return s;
 }
@@ -804,39 +1414,58 @@ function restoreState(s){
   }
 }
 
-function applyStaticLang(){
-  document.documentElement.lang = lang==='zh' ? 'zh-CN' : 'en';
-  document.title = lang==='zh' ? 'CS2 指令生成器 · 人机练习房' : 'CS2 Command Generator · Practice Lobby';
-  document.querySelectorAll('[data-i18n]').forEach(el=>{
-    const k = el.dataset.i18n;
-    if(el.dataset.i18nHtml) el.innerHTML = t(k);
-    else el.textContent = t(k);
-  });
-  document.getElementById('langBtn').textContent = lang==='zh' ? 'EN' : '中文';
-}
+/* ================= 事件 ================= */
+const modList = document.getElementById('modList');
 
-const langBtn = document.getElementById('langBtn');
-langBtn.addEventListener('click', ()=>{
-  const snap = snapshotState();
-  lang = lang==='zh' ? 'en' : 'zh';
-  try{ localStorage.setItem('cs2gen_lang', lang); }catch(e){}
-  applyStaticLang();
-  renderModules();
-  renderTemplates();
-  restoreState(snap);
+modList.addEventListener('click', e=>{
+  const cat = e.target.closest('.cat');
+  if(cat){
+    cat.classList.toggle('collapsed');
+    const grid = document.querySelector('.mod-grid[data-grid="'+cat.dataset.cat+'"]');
+    if(grid) grid.classList.toggle('hidden', cat.classList.contains('collapsed'));
+    return;
+  }
+  const mod = e.target.closest('.mod');
+  if(!mod) return;
+  if(e.target.closest('.mod-params')) return; // 参数区内不切换勾选
+  mod.classList.toggle('active');
   generate();
 });
-
-/* ================= 事件 ================= */
-document.getElementById('modList').addEventListener('click', e=>{
-  const head = e.target.closest('.mod-head');
-  if(head){
-    head.closest('.mod').classList.toggle('active');
-    generate();
+modList.addEventListener('input', e=>{
+  const el = e.target.closest('[data-key]');
+  if(!el) return;
+  if(el.type==='number'){
+    const pr = findParam(el.id);
+    if(pr && pr.min!==undefined && el.value!==''){
+      const v = parseFloat(el.value);
+      if(!isNaN(v)){
+        if(v>pr.max) el.value = pr.max;
+        if(v<pr.min) el.value = pr.min;
+      }
+    }
   }
+  generate();
 });
-document.getElementById('modList').addEventListener('input', generate);
-document.getElementById('modList').addEventListener('change', generate);
+modList.addEventListener('change', generate);
+modList.addEventListener('blur', e=>{
+  const el = e.target.closest('[data-key]');
+  if(el && el.type==='number'){
+    const pr = findParam(el.id);
+    if(pr){
+      if(el.value==='' || isNaN(parseFloat(el.value))) el.value = pr.def;
+      else el.value = clampNum(el, pr);
+      generate();
+    }
+  }
+}, true);
+
+function findParam(id){
+  const parts = id.split('_'); // p_<modid>_<key>
+  const key = parts[parts.length-1];
+  const modid = parts.slice(1, -1).join('_');
+  const m = MODULES.find(x=>x.id===modid);
+  return m ? (m.params||[]).find(x=>x.key===key) : null;
+}
 
 document.getElementById('clearAll').addEventListener('click', ()=>{
   document.querySelectorAll('.mod').forEach(m=>m.classList.remove('active'));
@@ -848,11 +1477,7 @@ document.getElementById('tplGrid').addEventListener('click', e=>{
   if(!tpl) return;
   document.querySelectorAll('.mod').forEach(m=>m.classList.remove('active'));
   TEMPLATES[+tpl.dataset.tpl].set();
-  generate();
-});
-
-document.getElementById('autoWarmup').addEventListener('change', e=>{
-  autoWarmup = e.target.checked;
+  if(searchBox.value){ searchBox.value = ''; applyFilter(); } // 清掉过滤，否则载入的模块可能被隐藏
   generate();
 });
 
@@ -864,25 +1489,65 @@ document.getElementById('viewToggle').addEventListener('click', e=>{
   generate();
 });
 
-function setModule(id, params){
-  const el = document.querySelector('.mod[data-id="'+id+'"]');
-  if(!el) return;
-  el.classList.add('active');
-  const mod = MODULES.find(m=>m.id===id);
-  for(const k in params){
-    if(!mod.params) continue;
-    const pr = mod.params.find(x=>x.key===k);
-    if(!pr) continue;
-    const input = document.getElementById('p_'+id+'_'+k);
-    if(!input) continue;
-    if(pr.type==='checkbox') input.checked = !!params[k];
-    else input.value = params[k];
-  }
+document.getElementById('autoWarmup').addEventListener('change', e=>{
+  autoWarmup = e.target.checked;
+  try{ localStorage.setItem('cs2gen_warmup', autoWarmup?'1':'0'); }catch(err){}
+  generate();
+});
+
+document.getElementById('themes').addEventListener('click', e=>{
+  const d = e.target.closest('.dot');
+  if(d) applyTheme(d.dataset.theme, true);
+});
+
+const searchBox = document.getElementById('searchBox');
+searchBox.addEventListener('input', applyFilter);
+
+function applyFilter(){
+  const q = searchBox.value.trim().toLowerCase();
+  document.querySelectorAll('.mod').forEach(el=>{
+    const hit = !q || (el.dataset.search||'').indexOf(q) >= 0;
+    el.style.display = hit ? '' : 'none';
+  });
+  document.querySelectorAll('.cat').forEach(cat=>{
+    const grid = document.querySelector('.mod-grid[data-grid="'+cat.dataset.cat+'"]');
+    if(!grid) return;
+    const any = [...grid.querySelectorAll('.mod')].some(m=>m.style.display !== 'none');
+    cat.style.display = any ? '' : 'none';
+    if(any){
+      grid.classList.remove('hidden');
+      cat.classList.remove('collapsed');
+    }else{
+      grid.classList.add('hidden');
+    }
+  });
 }
 
+document.getElementById('langBtn').addEventListener('click', ()=>{
+  const snap = snapshotState();
+  lang = lang==='zh' ? 'en' : 'zh';
+  try{ localStorage.setItem('cs2gen_lang', lang); }catch(e){}
+  applyStaticLang();
+  renderThemes();
+  renderModules();
+  renderTemplates();
+  renderRefs();
+  restoreState(snap);
+  applyFilter();
+  generate();
+  syncTooltipTitles();
+});
+
+function syncTooltipTitles(){
+  document.getElementById('cfgBtn').title = lang==='zh' ? '下载 .cfg 文件' : 'Download .cfg file';
+  document.getElementById('langBtn').title = 'Switch language / 切换语言';
+  document.getElementById('themes').title = lang==='zh' ? '配色' : 'Theme';
+}
+
+/* ================= 复制 / 下载 ================= */
 const copyBtn = document.getElementById('copyBtn');
 copyBtn.addEventListener('click', async ()=>{
-  const full = buildAll().join(';');
+  const full = dedupe(buildGrouped()).list.join(';');
   if(!full) return;
   try{
     await navigator.clipboard.writeText(full);
@@ -895,13 +1560,43 @@ copyBtn.addEventListener('click', async ()=>{
   }
   copyBtn.textContent = t('copied');
   copyBtn.classList.add('done');
-  setTimeout(()=>{ copyBtn.textContent = t('copyBtn'); copyBtn.classList.remove('done'); },1600);
+  setTimeout(()=>{ copyBtn.textContent = t('copyBtn'); copyBtn.classList.remove('done'); },1700);
+});
+
+document.getElementById('cfgBtn').addEventListener('click', ()=>{
+  const cmds = dedupe(buildGrouped()).list;
+  if(!cmds.length) return;
+  const content = cmds.join('\n') + '\n';
+  const blob = new Blob([content], {type:'text/plain;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'practice.cfg';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+});
+
+document.addEventListener('keydown', e=>{
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='e'){
+    e.preventDefault();
+    if(!copyBtn.disabled) copyBtn.click();
+  }
+  if(e.key==='Escape' && document.activeElement === searchBox){
+    searchBox.value = '';
+    applyFilter();
+  }
 });
 
 /* ================= 启动 ================= */
+applyTheme(theme, false);
 applyStaticLang();
+renderThemes();
 renderModules();
 renderTemplates();
+renderRefs();
+syncTooltipTitles();
+document.getElementById('autoWarmup').checked = autoWarmup;
 generate();
 </script>
 </body>
