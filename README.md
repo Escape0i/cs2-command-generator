@@ -3,7 +3,7 @@
 > CS2 控制台指令可视化生成器。勾选模块、调整参数，一键生成可粘贴到游戏控制台的复合指令。
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Version](https://img.shields.io/badge/version-2.0.0-blue)
+![Version](https://img.shields.io/badge/version-2.1.1-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 ![Languages](https://img.shields.io/badge/languages-中文%20%2F%20English-orange)
 ![Themes](https://img.shields.io/badge/themes-6%20color%20schemes-purple)
@@ -69,7 +69,7 @@
 
 ### 配色主题
 
-右上角色点可切换 6 套配色，默认「青夜·高对比」。卡片呼吸光晕、按钮渐变、背景网格等特效全部跟随所选主题变色，选择会被记住。
+右上角色点可切换 6 套配色，默认「青夜·高对比」。所有面板、色标、按钮与描边都跟随所选主题变色，选择会被记住。
 
 ### 语言与偏好
 
@@ -77,18 +77,20 @@
 
 ### 血量设置（重点说明）
 
-本工具的「设置血量」模块做了精准的目标区分，避免出现「只想改自己，结果人机也跟着变肉」的情况：
+CS2 已移除 `ent_fire ... addoutput "health N"` 这类旧写法，现在唯一可靠的改血量方式是 **buddha 模式**：先开 `buddha 1`，再用 `buddha_reset_hp` 指定「血被打空后回到多少」，最后自伤一下触发刷新。
 
-| 模式 | 作用对象 | 实现方式 |
+| 模式 | 效果 | 实现方式 |
 | --- | --- | --- |
-| 固定血量 | 只改自己 / 准星瞄准的人机 / 全体 | `ent_fire` 实体指令精准指定目标 |
-| 锁血 | 仅自己 | `buddha 1`（客户端命令，天然只作用于自己） |
+| 固定血量 | 血量被打空后回到设定值（可死一次） | `buddha 1` + `buddha_reset_hp 1000` + `hurtme 100` |
+| 锁血 | 血量归零后回到 1，等于不死 | `buddha 1` + `buddha_reset_hp 1` |
 
-例：只把自己血量设为 1000（不影响任何人机）
+例：把自己血量定为 1000
 
 ```
-sv_cheats 1;ent_fire !self addoutput "health 1000"
+sv_cheats 1;buddha 1;buddha_reset_hp 1000;hurtme 100
 ```
+
+注意：该机制只作用于执行指令的自己；若人机也处于 buddha 模式，会一并受影响。
 
 ### 按键绑定（一键出刀）
 
@@ -174,12 +176,13 @@ sv_cheats 1;ent_fire !self addoutput "health 1000"
 ## 重要注意事项
 
 1. **作弊模式前提**：所有生成指令以 `sv_cheats 1` 为前提，仅在自建练习房 / 单人模式生效；官方匹配、竞技模式中无效。
-2. **作用域区分**：`mp_` / `sv_` / `bot_` 开头的是**服务器变量**，由房主执行且对全房间生效；`cl_` / `god` / `noclip` 等是**客户端命令**，只影响你自己。想只改自己时请用客户端命令或 `ent_fire !self`。
+2. **作用域区分**：`mp_` / `sv_` / `bot_` 开头的是**服务器变量**，由房主执行且对全房间生效；`cl_` / `god` / `noclip` 等是**客户端命令**，只影响你自己。
 3. **CS2 的刀不能用 give**：`give weapon_knife_*` 是 CS:GO 遗留语法，CS2 已失效。刀具用 `subclass_create <id>` 生成后拾取（515 蝴蝶刀 / 507 爪子刀 / 508 M9 / 514 Bowie / 525 骷髅刀）。
 4. **练习模式无限训练时间**：练习对局默认停在无限训练（热身）阶段，用「结束训练时间」模块或执行 `mp_warmup_end` 立即进入正式回合。
 5. **多人房间限制**：`sv_cheats` 只有房主能开启。经实测，好友作为客户端无法自行执行出刀指令，因此本工具**未提供**好友端出刀方案。替代做法：房主执行出刀指令把刀生成在地上，好友走过去拾取即可。
-6. **血量指令的目标控制**：固定血量依赖 `ent_fire ... addoutput "health N"`，请在练习房实测确认生效；锁血（`buddha 1`）为客户端命令，只作用于自己。
+6. **血量机制**：CS2 不支持 `ent_fire` 改血量，本工具改用 `buddha` + `buddha_reset_hp`，执行后需受一次伤才会刷新显示。
 7. **指令时效**：部分指令（如拾取的刀具）在回合重置后可能失效，需重新生成。
+8. **CS:GO 遗留指令已剔除**：`sv_grenade_trajectory` / `sv_grenade_trajectory_time` → `sv_grenade_trajectory_prac_trailtime`（0 关闭，上限 8 秒）；`r_cleardecals` → `cl_removedecals`（只清准星指向处）；`cq_netgraph` 已被移除 → 用 `cl_showfps`；`weapon_recoil_scale` 在 CS2 无效 → 用 `weapon_accuracy_nospread` 消扩散；`bot_difficulty` 只接受 0–3。
 
 ## 本地构建 exe
 
@@ -208,7 +211,7 @@ cs2-command-generator/
 
 ## 更新日志
 
-完整版本脉络见 [CHANGELOG.md](CHANGELOG.md)。当前版本 **2.0.0**：指令模块扩至 38 个、新增 10 个一键模板、主题体系重做为 6 套配色，并回退多人房间队友发刀方案。
+完整版本脉络见 [CHANGELOG.md](CHANGELOG.md)。当前版本 **2.1.0**：界面改为分组卡片式工具版式，指令按 2026 年 CS2 现网修订，模块 38 个、一键模板 10 个、配色 6 套。
 
 ## License
 

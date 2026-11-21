@@ -1,6 +1,6 @@
 {
   "name": "cs2-command-generator",
-  "version": "2.0.0",
+  "version": "2.1.1",
   "description": "CS2 practice room console command generator",
   "main": "main.js",
   "author": "Escape",
